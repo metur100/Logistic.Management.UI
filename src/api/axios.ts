@@ -1,5 +1,5 @@
 import axios from 'axios'
-export const api = axios.create({ baseURL: 'https://localhost:7042/api' })
+export const api = axios.create({ baseURL: 'https://logistic-management.runasp.net/api' })
 api.interceptors.request.use(cfg => {
   const token = localStorage.getItem('token')
   if (token) cfg.headers.Authorization = `Bearer ${token}`
