@@ -351,7 +351,7 @@ export default function TripDetail() {
                       </td>
                       <td>
                         {c.weightTons
-                          ? <span style={{ background:'#f0fdf4', color:'#16a34a', padding:'.12rem .45rem', borderRadius:999, fontSize:'.7rem', fontWeight:600 }}>⚖️ {c.weightTons}t</span>
+                          ? <span style={{  }}> {c.weightTons}t</span>
                           : '—'}
                       </td>
                       <td style={{ fontSize:'.82rem' }}>{c.consignor || '—'}</td>
@@ -362,19 +362,6 @@ export default function TripDetail() {
                     </tr>
                   ))}
                 </tbody>
-                {totalWeight > 0 && (
-                  <tfoot>
-                    <tr>
-                      <td colSpan={3} style={{ fontWeight:700, fontSize:'.8rem', color:'var(--text-muted)', paddingTop:'.5rem' }}>
-                        {t('total')}
-                      </td>
-                      <td style={{ fontWeight:800, color:'#16a34a', fontSize:'.82rem', paddingTop:'.5rem' }}>
-                        ⚖️ {totalWeight.toFixed(2)} t
-                      </td>
-                      <td colSpan={3} />
-                    </tr>
-                  </tfoot>
-                )}
               </table>
             </div>
 
