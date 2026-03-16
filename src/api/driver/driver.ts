@@ -97,17 +97,18 @@ export type TripStatus =
   | 'InTransit'
   | 'NearDestination'
   | 'Unloading'
+  | 'UnloadingComplete'
   | 'DeliveryCompleted'
   | 'Cancelled'
 
 export const ACTIVE_STATUSES: TripStatus[] = [
   'Assigned', 'CargoLoading', 'LoadingComplete',
-  'InTransit', 'NearDestination', 'Unloading'
+  'InTransit', 'NearDestination', 'Unloading', 'UnloadingComplete'
 ]
 
 export const ALL_STATUSES: TripStatus[] = [
   'Assigned', 'CargoLoading', 'LoadingComplete',
-  'InTransit', 'NearDestination', 'Unloading',
+  'InTransit', 'NearDestination', 'Unloading', 'UnloadingComplete',
   'DeliveryCompleted', 'Cancelled'
 ]
 
@@ -133,7 +134,8 @@ export const STATUS_FLOW: Record<string, { next: TripStatus; label: string; emoj
   LoadingComplete:  { next: 'InTransit',          label: 'depart',             emoji: '🚛' },
   InTransit:        { next: 'NearDestination',    label: 'near_destination',   emoji: '📍' },
   NearDestination:  { next: 'Unloading',          label: 'start_unloading',    emoji: '📤' },
-  Unloading:        { next: 'DeliveryCompleted',  label: 'complete_delivery',  emoji: '🎉' },
+  Unloading:        { next: 'UnloadingComplete',  label: 'unloading_complete', emoji: '✅' },
+  UnloadingComplete: { next: 'DeliveryCompleted', label: 'complete_delivery',  emoji: '🎉' },
 }
 
 export const STATUS_LABELS: Record<string, { en: string; bs: string }> = {
@@ -143,6 +145,7 @@ export const STATUS_LABELS: Record<string, { en: string; bs: string }> = {
   InTransit:         { en: 'In Transit',         bs: 'U tranzitu' },
   NearDestination:   { en: 'Near Destination',   bs: 'Blizu odredišta' },
   Unloading:         { en: 'Unloading',          bs: 'Istovar' },
+  UnloadingComplete: { en: 'Unloading Complete', bs: 'Istovar završen' },
   DeliveryCompleted: { en: 'Delivered',          bs: 'Dostavljeno' },
   Cancelled:         { en: 'Cancelled',          bs: 'Otkazano' },
 }

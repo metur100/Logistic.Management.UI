@@ -8,15 +8,35 @@ import {
 } from '../../api/driver/driver'
 import { STATUS_COLORS, STATUS_LABELS, STATUS_FLOW } from '../../api/driver/driver'
 
+// ─── Extended steps including the 2 new ones ────────────────────────────────
 const STEPS: TripStatus[] = [
-  'Assigned', 'CargoLoading', 'LoadingComplete',
-  'InTransit', 'NearDestination', 'Unloading', 'DeliveryCompleted'
+  'Assigned',
+  'CargoLoading',       // Dolazak na utovar
+  'LoadingComplete',    // Utovar završen
+  'InTransit',
+  'NearDestination',
+  'Unloading',          // Dolazak na istovar
+  'UnloadingComplete',  // Istovar završen  ← NEW
+  'DeliveryCompleted',
 ]
 
 const STEP_SHORT: Record<string, string> = {
-  Assigned: 'Asgn', CargoLoading: 'Load', LoadingComplete: 'Lded',
-  InTransit: 'Go', NearDestination: 'Near', Unloading: 'Unlod',
-  DeliveryCompleted: 'Done'
+  Assigned:          'Asgn',
+  CargoLoading:      'Utov↑',
+  LoadingComplete:   'Lded',
+  InTransit:         'Go',
+  NearDestination:   'Near',
+  Unloading:         'Istov↓',
+  UnloadingComplete: 'Istv✓',  // NEW
+  DeliveryCompleted: 'Done',
+}
+
+// Which status auto-fills which POD datetime field
+const STATUS_TO_POD_FIELD: Partial<Record<string, keyof SubmitPodPayload>> = {
+  CargoLoading:      'loadingArrivalTime',
+  LoadingComplete:   'loadingEndTime',
+  Unloading:         'unloadingArrivalTime',
+  UnloadingComplete: 'unloadingEndTime',   // NEW
 }
 
 export default function DriverTripDetail() {
@@ -38,12 +58,34 @@ export default function DriverTripDetail() {
   const [cmrNumber, setCmrNumber] = useState('')
   const [savingCmr, setSavingCmr] = useState(false)
 
+  // Convert a JS Date → datetime-local string
+  const toDatetimeLocal = (d: Date) => {
+    const pad = (n: number) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  }
+
   const load = () => {
     setLoading(true)
     getTripById(Number(id))
       .then(tr => {
         setTrip(tr)
         if ((tr as any).cmrNumber) setCmrNumber((tr as any).cmrNumber)
+
+        // Auto-populate POD datetime fields from trip timestamps
+        setPodForm(prev => {
+          const u = { ...prev }
+          const map: Array<[string, keyof SubmitPodPayload]> = [
+            ['loadingArrivalTime',   'loadingArrivalTime'],
+            ['loadingEndTime',       'loadingEndTime'],
+            ['unloadingArrivalTime', 'unloadingArrivalTime'],
+            ['unloadingEndTime',     'unloadingEndTime'],
+          ]
+          map.forEach(([tripKey, podKey]) => {
+            const raw = (tr as any)[tripKey]
+            if (raw && !u[podKey]) u[podKey] = toDatetimeLocal(new Date(raw))
+          })
+          return u
+        })
       })
       .catch(() => toast.error(t('failed_load_trip')))
       .finally(() => setLoading(false))
@@ -56,6 +98,16 @@ export default function DriverTripDetail() {
       await updateTripStatus(Number(id), { status: newStatus, remarks: statusNote })
       toast.success(t('status_updated'))
       setStatusNote('')
+
+      // Auto-stamp the matching POD field with current time
+      const podField = STATUS_TO_POD_FIELD[newStatus]
+      if (podField) {
+        setPodForm(prev => ({
+          ...prev,
+          [podField]: prev[podField] || toDatetimeLocal(new Date()),
+        }))
+      }
+
       load()
     } catch (err: any) {
       toast.error(err.response?.data?.message || t('error_updating_status'))
@@ -86,15 +138,24 @@ export default function DriverTripDetail() {
   const lang = i18n.language === 'bs' ? 'bs' : 'en'
   const nextStep = STATUS_FLOW[trip.status as TripStatus]
   const isDone = trip.status === 'DeliveryCompleted' || trip.status === 'Cancelled'
-  const canSubmitPod = trip.status === 'Unloading' || trip.status === 'DeliveryCompleted'
+
+  // POD can be submitted once the driver has reached UnloadingComplete or later
+  const canSubmitPod = [
+    'UnloadingComplete',
+    'DeliveryCompleted',
+  ].includes(trip.status)
+
+  // At UnloadingComplete all 4 timestamps should already be filled → open form automatically
+  const shouldAutoOpenPod = trip.status === 'UnloadingComplete' && !trip.podReceived
+
   const currentStepIdx = STEPS.indexOf(trip.status as TripStatus)
   const sc = STATUS_COLORS[trip.status] || '#64748b'
 
   const TABS = [
-    { key: 'info',    label: t('trip_details'),      icon: '📋' },
-    { key: 'loading', label: t('loading_unloading'),  icon: '📦' },
-    { key: 'cargo',   label: t('cargo_items'),        icon: '🏗️' },
-    { key: 'history', label: t('status_history'),     icon: '🕒' },
+    { key: 'info',    label: t('trip_details'),     icon: '📋' },
+    { key: 'loading', label: t('loading_unloading'), icon: '📦' },
+    { key: 'cargo',   label: t('cargo_items'),       icon: '🏗️' },
+    { key: 'history', label: t('status_history'),    icon: '🕒' },
   ] as const
 
   return (
@@ -129,7 +190,7 @@ export default function DriverTripDetail() {
           display: flex;
           align-items: flex-start;
           justify-content: space-between;
-          min-width: 340px;
+          min-width: 380px;
           gap: 0;
         }
         .dtd-step-item {
@@ -213,6 +274,18 @@ export default function DriverTripDetail() {
           flex-shrink: 0;
           margin-top: .45rem;
         }
+        .pod-auto-banner {
+          background: linear-gradient(135deg, #1d4ed8, #7c3aed);
+          color: #fff;
+          border-radius: var(--radius);
+          padding: .75rem 1rem;
+          font-size: .82rem;
+          font-weight: 600;
+          margin-bottom: .75rem;
+          display: flex;
+          align-items: center;
+          gap: .5rem;
+        }
       `}</style>
 
       {/* Back */}
@@ -263,18 +336,13 @@ export default function DriverTripDetail() {
           <div className="dtd-step-inner">
             {STEPS.map((step, idx) => {
               const isDoneStep = idx < currentStepIdx
-              const isActive = idx === currentStepIdx
-              const dotColor = isActive ? sc : isDoneStep ? '#22c55e' : undefined
+              const isActive   = idx === currentStepIdx
+              const dotColor   = isActive ? sc : isDoneStep ? '#22c55e' : undefined
               return (
-                <div
-                  key={step}
-                  className={`dtd-step-item${isDoneStep ? ' done' : ''}`}>
+                <div key={step} className={`dtd-step-item${isDoneStep ? ' done' : ''}`}>
                   <div
                     className={`dtd-step-dot${isDoneStep ? ' done' : isActive ? ' active' : ''}`}
-                    style={isActive ? {
-                      background: sc, borderColor: sc,
-                      boxShadow: `0 0 0 3px ${sc}33`
-                    } : {}}>
+                    style={isActive ? { background: sc, borderColor: sc, boxShadow: `0 0 0 3px ${sc}33` } : {}}>
                     {isDoneStep ? '✓' : idx + 1}
                   </div>
                   <div className="dtd-step-lbl" style={dotColor ? { color: dotColor } : {}}>
@@ -296,8 +364,8 @@ export default function DriverTripDetail() {
             onClick={() => setActiveTab(tab.key)}
             style={{
               background: activeTab === tab.key ? 'var(--primary)' : 'var(--surface)',
-              color: activeTab === tab.key ? '#fff' : 'var(--text-muted)',
-              border: activeTab === tab.key ? 'none' : '1.5px solid var(--border)',
+              color:      activeTab === tab.key ? '#fff' : 'var(--text-muted)',
+              border:     activeTab === tab.key ? 'none' : '1.5px solid var(--border)',
             }}>
             {tab.icon} {tab.label}
           </button>
@@ -322,7 +390,7 @@ export default function DriverTripDetail() {
                 [t('vehicle'),           trip.vehicle?.registrationNo || '—'],
                 [t('distance'),          trip.distanceKm ? `${trip.distanceKm} km` : '—'],
                 [t('planned_departure'), trip.plannedDepartureDate ? new Date(trip.plannedDepartureDate).toLocaleString() : '—'],
-                [t('expected_arrival'),  trip.expectedArrivalDate ? new Date(trip.expectedArrivalDate).toLocaleString() : '—'],
+                [t('expected_arrival'),  trip.expectedArrivalDate  ? new Date(trip.expectedArrivalDate).toLocaleString()  : '—'],
                 trip.actualDepartureDate && [t('actual_departure'), new Date(trip.actualDepartureDate).toLocaleString()],
                 trip.actualArrivalDate   && [t('actual_arrival'),   new Date(trip.actualArrivalDate).toLocaleString()],
               ] as [string, string][]).filter(Boolean).map(([label, val]) => (
@@ -398,6 +466,19 @@ export default function DriverTripDetail() {
                 <span>🔄</span>
                 <h2 style={{ fontWeight: 700, fontSize: '.95rem' }}>{t('update_status')}</h2>
               </div>
+
+              {/* Info pill: what this status will auto-fill */}
+              {STATUS_TO_POD_FIELD[nextStep.next] && (
+                <div style={{
+                  background: '#eff6ff', border: '1px solid #bfdbfe',
+                  borderRadius: 'var(--radius-sm)', padding: '.5rem .75rem',
+                  fontSize: '.75rem', color: '#1d4ed8', fontWeight: 600,
+                  marginBottom: '.75rem', display: 'flex', alignItems: 'center', gap: '.35rem'
+                }}>
+                  ⏱️ {t('auto_fills_pod_time') || 'This will auto-fill the matching POD timestamp.'}
+                </div>
+              )}
+
               <div style={{ marginBottom: '.75rem' }}>
                 <label style={{ fontSize: '.8rem', fontWeight: 700, display: 'block', marginBottom: '.4rem' }}>
                   {t('remarks_optional')}
@@ -420,7 +501,7 @@ export default function DriverTripDetail() {
             </div>
           )}
 
-          {/* POD */}
+          {/* ── POD ── */}
           {canSubmitPod && (
             <div style={{
               background: 'var(--surface)', border: '1px solid var(--border)',
@@ -445,17 +526,26 @@ export default function DriverTripDetail() {
                 </div>
               ) : (
                 <>
+                  {/* Auto-open banner when at UnloadingComplete */}
+                  {shouldAutoOpenPod && (
+                    <div className="pod-auto-banner">
+                      🚀 {t('pod_ready_to_submit') || 'All timestamps are filled — please submit your POD to complete the delivery.'}
+                    </div>
+                  )}
+
                   <p style={{ color: 'var(--text-muted)', fontSize: '.82rem', marginBottom: '.75rem' }}>
                     {t('pod_not_submitted')}
                   </p>
+
                   <button
-                    className={showPod ? 'btn btn-outline' : 'btn btn-primary'}
-                    style={{ width: '100%', marginBottom: showPod ? '1rem' : 0 }}
-                    onClick={() => setShowPod(!showPod)}>
+                    className={(showPod || shouldAutoOpenPod) ? 'btn btn-outline' : 'btn btn-primary'}
+                    style={{ width: '100%', marginBottom: (showPod || shouldAutoOpenPod) ? '1rem' : 0 }}
+                    onClick={() => setShowPod(prev => !prev)}>
                     {showPod ? t('cancel') : `📋 ${t('submit_pod')}`}
                   </button>
 
-                  {showPod && (
+                  {/* Auto-open the form when at UnloadingComplete */}
+                  {(showPod || shouldAutoOpenPod) && (
                     <form onSubmit={handlePodSubmit}>
                       <div style={{ marginBottom: '.75rem' }}>
                         <label style={{ fontSize: '.8rem', fontWeight: 700, display: 'block', marginBottom: '.4rem' }}>
@@ -468,17 +558,20 @@ export default function DriverTripDetail() {
                           onChange={e => setPodForm({ ...podForm, podNumber: e.target.value })}
                         />
                       </div>
+
+                      {/* 4 datetime fields — pre-filled from trip data */}
                       <div className="dtd-pod-grid">
                         {([
-                          ['loadingArrivalTime',   t('loading_arrival')],
-                          ['loadingEndTime',        t('loading_end')],
-                          ['unloadingArrivalTime', t('unloading_arrival')],
-                          ['unloadingEndTime',     t('unloading_end')],
-                        ] as [keyof SubmitPodPayload, string][]).map(([field, label]) => (
+                          ['loadingArrivalTime',   t('loading_arrival'),   '⬆️ Dolazak na utovar'],
+                          ['loadingEndTime',       t('loading_end'),       '✅ Utovar završen'],
+                          ['unloadingArrivalTime', t('unloading_arrival'), '⬇️ Dolazak na istovar'],
+                          ['unloadingEndTime',     t('unloading_end'),     '✅ Istovar završen'],
+                        ] as [keyof SubmitPodPayload, string, string][]).map(([field, label, hint]) => (
                           <div key={field}>
-                            <label style={{ fontSize: '.78rem', fontWeight: 700, display: 'block', marginBottom: '.35rem' }}>
+                            <label style={{ fontSize: '.78rem', fontWeight: 700, display: 'block', marginBottom: '.2rem' }}>
                               {label}
                             </label>
+                            <div style={{ fontSize: '.65rem', color: 'var(--text-muted)', marginBottom: '.3rem' }}>{hint}</div>
                             <input
                               type="datetime-local"
                               className="form-control"
@@ -488,6 +581,7 @@ export default function DriverTripDetail() {
                           </div>
                         ))}
                       </div>
+
                       <div style={{ margin: '.75rem 0' }}>
                         <label style={{ fontSize: '.8rem', fontWeight: 700, display: 'block', marginBottom: '.4rem' }}>
                           {t('remarks_optional')}
@@ -544,16 +638,16 @@ export default function DriverTripDetail() {
                   {trip.plannedDepartureDate ? new Date(trip.plannedDepartureDate).toLocaleString() : '—'}
                 </div>
               </div>
-              {trip.loadingArrivalTime && (
+              {(trip as any).loadingArrivalTime && (
                 <div>
-                  <div style={{ opacity: .7, fontSize: '.7rem', marginBottom: '.2rem' }}>{t('loading_arrival')}</div>
-                  <div style={{ fontWeight: 600, fontSize: '.82rem' }}>{new Date(trip.loadingArrivalTime).toLocaleString()}</div>
+                  <div style={{ opacity: .7, fontSize: '.7rem', marginBottom: '.2rem' }}>⬆️ Dolazak na utovar</div>
+                  <div style={{ fontWeight: 600, fontSize: '.82rem' }}>{new Date((trip as any).loadingArrivalTime).toLocaleString()}</div>
                 </div>
               )}
-              {trip.loadingEndTime && (
+              {(trip as any).loadingEndTime && (
                 <div>
-                  <div style={{ opacity: .7, fontSize: '.7rem', marginBottom: '.2rem' }}>{t('loading_end')}</div>
-                  <div style={{ fontWeight: 600, fontSize: '.82rem' }}>{new Date(trip.loadingEndTime).toLocaleString()}</div>
+                  <div style={{ opacity: .7, fontSize: '.7rem', marginBottom: '.2rem' }}>✅ Utovar završen</div>
+                  <div style={{ fontWeight: 600, fontSize: '.82rem' }}>{new Date((trip as any).loadingEndTime).toLocaleString()}</div>
                 </div>
               )}
             </div>
@@ -604,16 +698,16 @@ export default function DriverTripDetail() {
                   {trip.expectedArrivalDate ? new Date(trip.expectedArrivalDate).toLocaleString() : '—'}
                 </div>
               </div>
-              {trip.unloadingArrivalTime && (
+              {(trip as any).unloadingArrivalTime && (
                 <div>
-                  <div style={{ opacity: .7, fontSize: '.7rem', marginBottom: '.2rem' }}>{t('unloading_arrival')}</div>
-                  <div style={{ fontWeight: 600, fontSize: '.82rem' }}>{new Date(trip.unloadingArrivalTime).toLocaleString()}</div>
+                  <div style={{ opacity: .7, fontSize: '.7rem', marginBottom: '.2rem' }}>⬇️ Dolazak na istovar</div>
+                  <div style={{ fontWeight: 600, fontSize: '.82rem' }}>{new Date((trip as any).unloadingArrivalTime).toLocaleString()}</div>
                 </div>
               )}
-              {trip.unloadingEndTime && (
+              {(trip as any).unloadingEndTime && (
                 <div>
-                  <div style={{ opacity: .7, fontSize: '.7rem', marginBottom: '.2rem' }}>{t('unloading_end')}</div>
-                  <div style={{ fontWeight: 600, fontSize: '.82rem' }}>{new Date(trip.unloadingEndTime).toLocaleString()}</div>
+                  <div style={{ opacity: .7, fontSize: '.7rem', marginBottom: '.2rem' }}>✅ Istovar završen</div>
+                  <div style={{ fontWeight: 600, fontSize: '.82rem' }}>{new Date((trip as any).unloadingEndTime).toLocaleString()}</div>
                 </div>
               )}
             </div>
