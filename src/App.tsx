@@ -121,7 +121,6 @@ export default function App() {
             <Route path="incident"                    element={<DriverIncidentReport />} />   {/* ← NEW (no tripId) */}
           </Route>
 
-          {/* ── Fallback ───────────────────────────────────── */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
