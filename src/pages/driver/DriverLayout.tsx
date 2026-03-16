@@ -14,7 +14,6 @@ export default function DriverLayout() {
   const navLinks = [
     { to: '/driver', label: t('home'), icon: '🏠', end: true },
     { to: '/driver/trips', label: t('my_trips'), icon: '🚛' },
-    { to: '/driver/fuel', label: t('fuel_requests'), icon: '⛽' },
   ]
 
   return (

@@ -19,7 +19,6 @@ export default function ManagementLayout() {
     { to: '/management/cargo', label: t('nav_cargo') },
     { to: '/management/vehicles', label: t('nav_vehicles') },
     { to: '/management/users', label: t('nav_users') },
-    { to: '/management/fuel-requests', label: t('nav_fuel_requests') },
   ]
 
   const sidebarContent = (

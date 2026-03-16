@@ -18,7 +18,6 @@ interface Stats {
   delivered: number
   vehicles: number
   drivers: number
-  pendingFuel: number
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -29,7 +28,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function Dashboard() {
   const { t } = useTranslation()
-  const [stats, setStats] = useState<Stats>({ trips: 0, active: 0, delivered: 0, vehicles: 0, drivers: 0, pendingFuel: 0 })
+  const [stats, setStats] = useState<Stats>({ trips: 0, active: 0, delivered: 0, vehicles: 0, drivers: 0 })
   const [recentTrips, setRecentTrips] = useState<Trip[]>([])
 
   useEffect(() => {
@@ -37,19 +36,16 @@ export default function Dashboard() {
       api.get('/trips'),
       api.get('/vehicles'),
       api.get('/users?role=Driver'),
-      api.get('/fuelrequests?status=Pending'),
-    ]).then(([trips, vehicles, drivers, fuel]) => {
+    ]).then(([trips, vehicles, drivers, ]) => {
       const tr: Trip[] = Array.isArray(trips.data) ? trips.data : (trips.data?.data ?? [])
       const vArr = Array.isArray(vehicles.data) ? vehicles.data : (vehicles.data?.data ?? [])
       const dArr = Array.isArray(drivers.data) ? drivers.data : (drivers.data?.data ?? [])
-      const fArr = Array.isArray(fuel.data) ? fuel.data : (fuel.data?.data ?? [])
       setStats({
         trips: tr.length,
         active: tr.filter(x => !['DeliveryCompleted', 'Cancelled'].includes(x.status)).length,
         delivered: tr.filter(x => x.status === 'DeliveryCompleted').length,
         vehicles: vArr.length,
         drivers: dArr.length,
-        pendingFuel: fArr.length
       })
       setRecentTrips(tr.slice(0, 5))
     }).catch(console.error)
@@ -63,7 +59,6 @@ export default function Dashboard() {
     { label: t('delivered'), value: stats.delivered, icon: '\u2705', color: '#22c55e' },
     { label: t('vehicles'), value: stats.vehicles, icon: '\uD83D\uDE9A', color: '#8b5cf6' },
     { label: t('drivers'), value: stats.drivers, icon: '\uD83D\uDC64', color: '#ec4899' },
-    { label: t('pending_fuel'), value: stats.pendingFuel, icon: '\u26FD', color: '#ef4444' },
   ]
 
   return (

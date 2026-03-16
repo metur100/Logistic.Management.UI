@@ -3,14 +3,12 @@ import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import ManagementLayout from './pages/management/ManagementLayout'
 import DriverTripDetail from './pages/driver/DriverTripDetail'
-import DriverFuel from './pages/driver/DriverFuel'
 import Trips from './pages/management/Trips'
 import TripForm from './pages/management/TripForm'
 import TripDetail from './pages/management/TripDetail'
 import CargoPage from './pages/management/CargoPage'
 
 import UsersPage from './pages/management/UsersPage'
-import FuelRequests from './pages/management/FuelRequests'
 import DriverLayout from './pages/driver/DriverLayout'
 import DriverHome from './pages/driver/DriverHome'
 
@@ -59,13 +57,11 @@ export default function App() {
             <Route path="cargo" element={<CargoPage />} />
             <Route path="vehicles" element={<VehiclesPage />} />
             <Route path="users" element={<UsersPage />} />
-            <Route path="fuel-requests" element={<FuelRequests />} />
           </Route>
           <Route path="/driver" element={<PrivateRoute roles={['Driver']}><DriverLayout /></PrivateRoute>}>
             <Route index element={<DriverHome />} />
             <Route path="trips" element={<DriverTrips />} />
             <Route path="trips/:id" element={<DriverTripDetail />} />
-            <Route path="fuel" element={<DriverFuel />} />
           </Route>
         </Routes>
       </BrowserRouter>

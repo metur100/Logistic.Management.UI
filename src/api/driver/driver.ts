@@ -54,7 +54,6 @@ export interface TripDetail {
   vehicle: { registrationNo: string } | null
   cargoItems: CargoItem[]
   statusHistory: StatusHistoryEntry[]
-  fuelRequests: FuelRequest[]
 }
 
 export interface CargoItem {
@@ -71,24 +70,6 @@ export interface StatusHistoryEntry {
   status: string
   remarks: string | null
   changedAt: string
-}
-
-export interface FuelRequest {
-  id: number
-  litersRequested: number
-  status: string
-  remarks: string | null
-  requestedAt: string
-  managerNote: string | null
-  tripRoute: string | null
-}
-
-export interface CreateFuelRequestPayload {
-  tripId: number | null
-  litersRequested: number
-  remarks: string
-  pumpName: string
-  route: string
 }
 
 export interface UpdateTripStatusPayload {
@@ -149,11 +130,6 @@ export const STATUS_COLORS: Record<string, string> = {
   Unloading:         '#0891b2',
   DeliveryCompleted: '#16a34a',
   Cancelled:         '#dc2626',
-  // Fuel request statuses
-  Pending:   '#d97706',
-  Approved:  '#16a34a',
-  Rejected:  '#dc2626',
-  Fulfilled: '#2563eb',
 }
 
 export const STATUS_LABELS: Record<string, { en: string; bs: string }> = {
@@ -192,11 +168,3 @@ export const updateTripStatus = (id: number, payload: UpdateTripStatusPayload): 
 /** PUT /trips/:id/pod */
 export const submitPod = (id: number, payload: SubmitPodPayload): Promise<void> =>
   api.put(`/trips/${id}/pod`, payload)
-
-/** GET /fuel-requests/my-requests */
-export const getMyFuelRequests = (): Promise<FuelRequest[]> =>
-  api.get('/fuel-requests/my-requests').then(r => r.data)
-
-/** POST /fuel-requests */
-export const createFuelRequest = (payload: CreateFuelRequestPayload): Promise<void> =>
-  api.post('/fuel-requests', payload)

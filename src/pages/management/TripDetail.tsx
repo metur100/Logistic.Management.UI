@@ -34,15 +34,6 @@ interface StatusHistory {
   remarks?: string
 }
 
-interface FuelRequest {
-  id: number
-  litersRequested: number
-  pumpName?: string
-  route?: string
-  status: string
-  requestedAt: string
-}
-
 interface Trip {
   id: number
   tripNumber: string
@@ -65,7 +56,6 @@ interface Trip {
   vehicle?: Vehicle
   cargoItems?: CargoItem[]
   statusHistory?: StatusHistory[]
-  fuelRequests?: FuelRequest[]
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -200,31 +190,6 @@ export default function TripDetail() {
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {trip.fuelRequests && trip.fuelRequests.length > 0 && (
-        <div className="card">
-          <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>{t('fuel_requests')}</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>{t('liters')}</th><th>{t('pump')}</th><th>{t('route')}</th>
-                <th>{t('status')}</th><th>{t('requested')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {trip.fuelRequests.map(f => (
-                <tr key={f.id}>
-                  <td>{f.litersRequested} L</td>
-                  <td>{f.pumpName || '—'}</td>
-                  <td>{f.route || '—'}</td>
-                  <td><span className={`badge badge-${f.status.toLowerCase()}`}>{f.status}</span></td>
-                  <td>{new Date(f.requestedAt).toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       )}
     </div>

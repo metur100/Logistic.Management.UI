@@ -70,9 +70,6 @@ export default function DriverHome() {
           <button className="btn btn-primary" onClick={() => nav('/driver/trips')}>
             {t('view_my_trips')}
           </button>
-          <button className="btn btn-secondary" onClick={() => nav('/driver/fuel')}>
-            ⛽ {t('request_fuel')}
-          </button>
         </div>
       </div>
     </div>
