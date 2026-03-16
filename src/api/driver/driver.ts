@@ -10,11 +10,11 @@ export interface DriverTrip {
   originLocation: string
   destinationLocation: string
   status: string
-  distanceKm: number | null
-  plannedDepartureDate: string | null
-  expectedArrivalDate: string | null
-  remarks: string | null
-  vehicleRegistration: string | null
+  distanceKm?: number
+  plannedDepartureDate?: string
+  expectedArrivalDate?: string
+  vehicleRegistration?: string
+  remarks?: string
 }
 
 export interface DriverStats {
@@ -59,11 +59,13 @@ export interface TripDetail {
 export interface CargoItem {
   id: number
   description: string
-  weightTons: number | null
-  consignee: string | null
-  type: string | null
-  specialInstructions: string | null
+  weightTons?: number
+  consignee?: string
+  consignor?: string         
+  type?: string
+  specialInstructions?: string
 }
+
 
 export interface StatusHistoryEntry {
   id: number
@@ -109,38 +111,51 @@ export const ALL_STATUSES: TripStatus[] = [
   'DeliveryCompleted', 'Cancelled'
 ]
 
-// next status the driver can transition to, keyed by current status
-export const STATUS_FLOW: Record<TripStatus, { next: TripStatus; label: string; emoji: string } | null> = {
-  Assigned:          { next: 'CargoLoading',      label: 'start_loading',     emoji: '📦' },
-  CargoLoading:      { next: 'LoadingComplete',   label: 'loading_complete',  emoji: '✅' },
-  LoadingComplete:   { next: 'InTransit',         label: 'start_transit',     emoji: '🚀' },
-  InTransit:         { next: 'NearDestination',   label: 'near_destination',  emoji: '📍' },
-  NearDestination:   { next: 'Unloading',         label: 'start_unloading',   emoji: '📤' },
-  Unloading:         { next: 'DeliveryCompleted', label: 'complete_delivery', emoji: '🏁' },
-  DeliveryCompleted: null,
-  Cancelled:         null,
+// Add to existing driver.ts
+
+export interface DriverTrip {
+  id: number
+  tripNumber: string
+  originLocation: string
+  destinationLocation: string
+  status: string
+  distanceKm?: number
+  plannedDepartureDate?: string
+  expectedArrivalDate?: string
+  vehicleRegistration?: string
+  remarks?: string
 }
 
-export const STATUS_COLORS: Record<string, string> = {
-  Assigned:          '#6b7280',
-  CargoLoading:      '#d97706',
-  LoadingComplete:   '#f59e0b',
-  InTransit:         '#2563eb',
-  NearDestination:   '#7c3aed',
-  Unloading:         '#0891b2',
-  DeliveryCompleted: '#16a34a',
-  Cancelled:         '#dc2626',
+// Ensure STATUS_FLOW covers all transitions
+export const STATUS_FLOW: Record<string, { next: TripStatus; label: string; emoji: string }> = {
+  Assigned:         { next: 'CargoLoading',      label: 'start_loading',      emoji: '📦' },
+  CargoLoading:     { next: 'LoadingComplete',    label: 'loading_complete',   emoji: '✅' },
+  LoadingComplete:  { next: 'InTransit',          label: 'depart',             emoji: '🚛' },
+  InTransit:        { next: 'NearDestination',    label: 'near_destination',   emoji: '📍' },
+  NearDestination:  { next: 'Unloading',          label: 'start_unloading',    emoji: '📤' },
+  Unloading:        { next: 'DeliveryCompleted',  label: 'complete_delivery',  emoji: '🎉' },
 }
 
 export const STATUS_LABELS: Record<string, { en: string; bs: string }> = {
-  Assigned:          { en: 'Assigned',          bs: 'Dodijeljeno'      },
-  CargoLoading:      { en: 'Cargo Loading',     bs: 'Utovar tereta'    },
-  LoadingComplete:   { en: 'Loading Complete',  bs: 'Utovar završen'   },
-  InTransit:         { en: 'In Transit',        bs: 'U prijevozu'      },
-  NearDestination:   { en: 'Near Destination',  bs: 'Blizu odredišta'  },
-  Unloading:         { en: 'Unloading',         bs: 'Istovar'          },
-  DeliveryCompleted: { en: 'Delivered',         bs: 'Dostavljeno'      },
-  Cancelled:         { en: 'Cancelled',         bs: 'Otkazano'         },
+  Assigned:          { en: 'Assigned',           bs: 'Dodijeljeno' },
+  CargoLoading:      { en: 'Cargo Loading',      bs: 'Utovarna' },
+  LoadingComplete:   { en: 'Loading Complete',   bs: 'Utovar završen' },
+  InTransit:         { en: 'In Transit',         bs: 'U tranzitu' },
+  NearDestination:   { en: 'Near Destination',   bs: 'Blizu odredišta' },
+  Unloading:         { en: 'Unloading',          bs: 'Istovar' },
+  DeliveryCompleted: { en: 'Delivered',          bs: 'Dostavljeno' },
+  Cancelled:         { en: 'Cancelled',          bs: 'Otkazano' },
+}
+
+export const STATUS_COLORS: Record<string, string> = {
+  Assigned:          '#6366f1',
+  CargoLoading:      '#f59e0b',
+  LoadingComplete:   '#3b82f6',
+  InTransit:         '#8b5cf6',
+  NearDestination:   '#ec4899',
+  Unloading:         '#f97316',
+  DeliveryCompleted: '#22c55e',
+  Cancelled:         '#ef4444',
 }
 
 // ── API calls ──────────────────────────────────────────────
