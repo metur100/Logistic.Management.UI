@@ -21,6 +21,7 @@
   "nav_cargo": "Cargo",
   "nav_vehicles": "Vehicles",
   "nav_users": "Users",
+  "nav_incidents": "Incidents",
   "nav_home": "Home",
   "nav_my_trips": "My Trips",
 
@@ -75,6 +76,8 @@
   "failed": "Failed",
   "delete_cargo_confirm": "Delete this cargo?",
   "items": "Items",
+  "details": "Details",
+  "report_preview": "Report Preview",
 
   "liters": "Liters",
   "pump": "Pump",
@@ -96,6 +99,8 @@
   "cancel_trip_confirm": "Cancel this trip?",
   "trip_cancelled": "Trip cancelled",
   "all_statuses": "All Statuses",
+  "filtering_by": "Filtering by",
+  "clear": "Clear",
   "create_new_trip": "Create New Trip",
   "edit_trip": "Edit Trip",
   "assignment": "Assignment",
@@ -159,6 +164,7 @@
   "password_required": "Password *",
   "saved": "Saved",
   "updated": "Updated",
+  "high_priority": "High Priority",
 
   "vehicles_title": "Vehicles",
   "add_vehicle": "+ Add Vehicle",

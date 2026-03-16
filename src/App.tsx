@@ -100,8 +100,8 @@ export default function App() {
             <Route path="cargo"           element={<CargoPage />} />
             <Route path="vehicles"        element={<VehiclesPage />} />
             <Route path="users"           element={<UsersPage />} />
-            <Route path="messages"        element={<MessagesPage />} />   {/* ← NEW */}
-            <Route path="incidents"       element={<IncidentsPage />} />  {/* ← NEW */}
+            <Route path="messages"        element={<MessagesPage />} />  
+            <Route path="incidents"       element={<IncidentsPage />} />  
           </Route>
 
           {/* ── Driver ─────────────────────────────────────── */}

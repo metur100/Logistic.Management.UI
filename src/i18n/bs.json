@@ -21,6 +21,7 @@
   "nav_cargo": "Teret",
   "nav_vehicles": "Vozila",
   "nav_users": "Korisnici",
+  "nav_incidents": "Incidenti",
   "nav_home": "Početna",
   "nav_my_trips": "Moja putovanja",
 
@@ -75,6 +76,8 @@
   "failed": "Neuspješno",
   "delete_cargo_confirm": "Obrisati ovaj teret?",
   "items": "Stavke",
+  "details": "Detalji",
+  "report_preview": "Pregled prijave",
 
   "liters": "Litri",
   "pump": "Pumpa",
@@ -96,6 +99,8 @@
   "cancel_trip_confirm": "Otkazati ovo putovanje?",
   "trip_cancelled": "Putovanje otkazano",
   "all_statuses": "Svi statusi",
+  "filtering_by": "Filtriranje po",
+  "clear": "Očisti",
   "create_new_trip": "Kreiraj novo putovanje",
   "edit_trip": "Uredi putovanje",
   "assignment": "Dodjela",
@@ -159,6 +164,7 @@
   "password_required": "Lozinka *",
   "saved": "Sačuvano",
   "updated": "Ažurirano",
+  "high_priority": "Visok prioritet",
 
   "vehicles_title": "Vozila",
   "add_vehicle": "+ Dodaj vozilo",
@@ -286,7 +292,7 @@
   "open": "Otvoreno",
   "resolved": "Riješeno",
   "reported_at": "Prijavljeno",
-  "resolved_at": "Riješeno",
+  "resolved_at": "Riješeno u",
   "resolution": "Rješenje",
   "resolution_notes": "Bilješke o rješenju",
   "describe_resolution": "Opišite kako je problem riješen...",
