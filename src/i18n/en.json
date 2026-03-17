@@ -375,6 +375,8 @@
   "describe_resolution": "Describe how this was resolved...",
   "mark_resolved": "Mark as Resolved",
 
+      "my_incidents": "My Incidents",
+
   "driver_home_welcome": "Welcome, {{name}}!",
   "active_trips_label": "Active Transports",
   "completed": "Completed",

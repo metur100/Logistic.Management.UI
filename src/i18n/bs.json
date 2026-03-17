@@ -374,6 +374,7 @@
   "incident_type_other": "Ostalo",
 
   "severity_low": "Nisko",
+    "my_incidents": "Moji incidenti",
   "severity_medium": "Srednje",
   "severity_high": "Visoko",
 
