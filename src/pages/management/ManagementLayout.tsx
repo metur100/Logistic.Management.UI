@@ -16,11 +16,11 @@ export default function ManagementLayout() {
   useEffect(() => {
     api.get('/messages/unread-count?role=manager')
       .then(r => setUnread(r.data.count || 0))
-      .catch(() => {})
+      .catch(() => { })
     const iv = setInterval(() => {
       api.get('/messages/unread-count?role=manager')
         .then(r => setUnread(r.data.count || 0))
-        .catch(() => {})
+        .catch(() => { })
     }, 30000)
     return () => clearInterval(iv)
   }, [])
@@ -169,20 +169,37 @@ export default function ManagementLayout() {
         <LanguageSwitcher />
       </div>
 
-      <main style={{ marginLeft: 248, flex: 1, padding: '1.5rem', minHeight: '100vh', background: 'var(--bg)' }} className="management-main">
+      <main style={{
+        marginLeft: 248,
+        flex: 1,
+        minWidth: 0,
+        width: 'calc(100vw - 248px)',
+        maxWidth: 'calc(100vw - 248px)',
+        overflowX: 'hidden',
+        padding: '1.5rem',
+        minHeight: '100vh',
+        background: 'var(--bg)',
+        boxSizing: 'border-box',
+      }} className="management-main">
         <Outlet />
       </main>
 
       <style>{`
-        @media (max-width: 768px) {
-          .sidebar-desktop { display: none !important; }
-          .mobile-topbar { display: flex !important; }
-          .management-main { margin-left: 0 !important; padding-top: 72px !important; }
-        }
-        @media (min-width: 769px) {
-          .sidebar-mobile { display: none !important; }
-        }
-      `}</style>
+  @media (max-width: 768px) {
+    .sidebar-desktop { display: none !important; }
+    .mobile-topbar { display: flex !important; }
+    .management-main {
+      margin-left: 0 !important;
+      padding-top: 72px !important;
+      width: 100vw !important;
+      max-width: 100vw !important;
+    }
+  }
+  @media (min-width: 769px) {
+    .sidebar-mobile { display: none !important; }
+  }
+`}</style>
+
     </div>
   )
 }
