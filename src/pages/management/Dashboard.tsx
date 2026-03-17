@@ -330,7 +330,7 @@ export default function Dashboard() {
                       <span
                         className="trip-status-badge"
                         style={{ background: `${sc}18`, color: sc }}>
-                        {tr.status}
+                        {t(`status_${tr.status}`)}
                       </span>
                       <div className="trip-driver">
                         {tr.driver?.fullName || '—'}
@@ -359,7 +359,7 @@ export default function Dashboard() {
                     marginBottom: '.25rem', fontSize: '.75rem'
                   }}>
                     <span style={{ fontWeight: 600, color: sc, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '65%' }}>
-                      {status}
+                      {t(`status_${status}`)}
                     </span>
                     <span style={{ color: 'var(--text-muted)', flexShrink: 0 }}>
                       {count} ({pct}%)

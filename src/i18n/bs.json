@@ -251,6 +251,7 @@
   "error_loading_data": "Greška pri učitavanju podataka",
 
   "status_Assigned": "Dodijeljeno",
+  "status_UnloadingComplete": "Istovar završen",
   "status_CargoLoading": "Utovar tereta",
   "status_LoadingComplete": "Utovar završen",
   "status_InTransit": "U prijevozu",
@@ -352,7 +353,38 @@
 
   "role_driver": "Vozač",
   "role_manager": "Menadžer",
-  "role_admin": "Administrator"
+  "role_admin": "Administrator",
+
+  "step_assigned": "Dodij.",
+  "step_cargo_loading": "Utov↑",
+  "step_loading_complete": "Utov✓",
+  "step_in_transit": "Vozi",
+  "step_near_destination": "Blizu",
+  "step_unloading": "Istov↓",
+  "step_unloading_complete": "Istov✓",
+  "step_delivery_completed": "Gotovo",
+
+  "incident_type_breakdown": "Kvar",
+  "incident_type_accident": "Nesreća",
+  "incident_type_delay": "Kašnjenje",
+  "incident_type_road_closure": "Zatvorena cesta",
+  "incident_type_cargo_damage": "Oštećenje tereta",
+  "incident_type_weather": "Vremenske prilike",
+  "incident_type_border_delay": "Kašnjenje na granici",
+  "incident_type_other": "Ostalo",
+
+  "severity_low": "Nisko",
+  "severity_medium": "Srednje",
+  "severity_high": "Visoko",
+
+  "incident_type_breakdown": "Kvar",
+  "incident_type_accident": "Nesreća",
+  "incident_type_delay": "Kašnjenje",
+  "incident_type_road_closure": "Zatvorena cesta",
+  "incident_type_cargo_damage": "Oštećenje tereta",
+  "incident_type_weather": "Vremenske prilike",
+  "incident_type_border_delay": "Kašnjenje na granici",
+  "incident_type_other": "Ostalo"
 
 ,
   "cargo_type_fragile": "Lomljivo",

@@ -7,17 +7,25 @@ import {
   submitPod, TripStatus, SubmitPodPayload
 } from '../../api/driver/driver'
 import { STATUS_COLORS, STATUS_LABELS, STATUS_FLOW } from '../../api/driver/driver'
+import { t } from 'i18next'
 
 // ─── Constants (stable, defined outside component) ───────────────────────────
 const STEPS: TripStatus[] = [
   'Assigned', 'CargoLoading', 'LoadingComplete', 'InTransit',
   'NearDestination', 'Unloading', 'UnloadingComplete', 'DeliveryCompleted',
 ]
-const STEP_SHORT: Record<string, string> = {
-  Assigned: 'Asgn', CargoLoading: 'Utov↑', LoadingComplete: 'Lded',
-  InTransit: 'Go', NearDestination: 'Near', Unloading: 'Istov↓',
-  UnloadingComplete: 'Istv✓', DeliveryCompleted: 'Done',
-}
+const STEP_SHORT = (t: (k: string) => string): Record<string, string> => ({
+  Assigned:          t('step_assigned'),
+  CargoLoading:      t('step_cargo_loading'),
+  LoadingComplete:   t('step_loading_complete'),
+  InTransit:         t('step_in_transit'),
+  NearDestination:   t('step_near_destination'),
+  Unloading:         t('step_unloading'),
+  UnloadingComplete: t('step_unloading_complete'),
+  DeliveryCompleted: t('step_delivery_completed'),
+})
+const stepShort = STEP_SHORT(t)
+
 const STATUS_TO_POD_FIELD: Partial<Record<string, keyof SubmitPodPayload>> = {
   CargoLoading: 'loadingArrivalTime',
   LoadingComplete: 'loadingEndTime',
@@ -566,7 +574,7 @@ export default function DriverTripDetail() {
                     style={isActive ? { background: sc, borderColor: sc, boxShadow: `0 0 0 3px ${sc}33` } : {}}>
                     {isDoneStep ? '✓' : idx + 1}
                   </div>
-                  <div className="dtd-step-lbl" style={dotColor ? { color: dotColor } : {}}>{STEP_SHORT[step]}</div>
+                  <div className="dtd-step-lbl" style={dotColor ? { color: dotColor } : {}}>{stepShort[step]}</div>
                 </div>
               )
             })}

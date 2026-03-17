@@ -281,7 +281,38 @@
 
   "role_driver": "Driver",
   "role_manager": "Manager",
-  "role_admin": "Admin"
+  "role_admin": "Admin",
+
+  "step_assigned": "Asgn",
+  "step_cargo_loading": "Load↑",
+  "step_loading_complete": "Lded",
+  "step_in_transit": "Go",
+  "step_near_destination": "Near",
+  "step_unloading": "Unlod↓",
+  "step_unloading_complete": "Unlod✓",
+  "step_delivery_completed": "Done",
+
+  "incident_type_breakdown": "Breakdown",
+  "incident_type_accident": "Accident",
+  "incident_type_delay": "Delay",
+  "incident_type_road_closure": "Road Closure",
+  "incident_type_cargo_damage": "Cargo Damage",
+  "incident_type_weather": "Weather",
+  "incident_type_border_delay": "Border Delay",
+  "incident_type_other": "Other",
+
+  "severity_low": "Low",
+  "severity_medium": "Medium",
+  "severity_high": "High",
+
+  "incident_type_breakdown": "Breakdown",
+  "incident_type_accident": "Accident",
+  "incident_type_delay": "Delay",
+  "incident_type_road_closure": "Road Closure",
+  "incident_type_cargo_damage": "Cargo Damage",
+  "incident_type_weather": "Weather",
+  "incident_type_border_delay": "Border Delay",
+  "incident_type_other": "Other"
 
 ,
   "cargo_type_fragile": "Fragile",

@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
+import { t } from 'i18next'
 
 interface Driver  { fullName?: string; phone?: string; licenseNumber?: string }
 interface Vehicle { registrationNumber?: string; fleetName?: string; type?: string; capacity?: number }
@@ -51,12 +52,18 @@ const STEPS = [
   'Assigned', 'CargoLoading', 'LoadingComplete', 'InTransit',
   'NearDestination', 'Unloading', 'UnloadingComplete', 'DeliveryCompleted',  // ← added
 ]
-const STEP_SHORT: Record<string, string> = {
-  Assigned: 'Asgn', CargoLoading: 'Load↑', LoadingComplete: 'Lded',
-  InTransit: 'Go', NearDestination: 'Near', Unloading: 'Unlod↓',
-  UnloadingComplete: 'Unlod✓',  // ← added
-  DeliveryCompleted: 'Done',
-}
+const STEP_SHORT = (t: (k: string) => string): Record<string, string> => ({
+  Assigned:          t('step_assigned'),
+  CargoLoading:      t('step_cargo_loading'),
+  LoadingComplete:   t('step_loading_complete'),
+  InTransit:         t('step_in_transit'),
+  NearDestination:   t('step_near_destination'),
+  Unloading:         t('step_unloading'),
+  UnloadingComplete: t('step_unloading_complete'),
+  DeliveryCompleted: t('step_delivery_completed'),
+})
+
+const stepShort = STEP_SHORT(t)
 
 // ─ Pure helpers ──────────────────────────────────────────────────────────────────
 function InfoRow({ label, value }: { label: string; value?: string | number | null }) {
@@ -174,7 +181,7 @@ export default function TripDetail() {
               padding: '.2rem .7rem', fontSize: '.78rem', fontWeight: 800,
               letterSpacing: '.04em', marginBottom: '.35rem', whiteSpace: 'nowrap',
             }}>
-              {STATUS_LABELS[trip.status] || trip.status}
+              {t(`status_${trip.status}`)}
             </div>
             <div style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '.3rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {trip.tripNumber}
@@ -229,7 +236,7 @@ export default function TripDetail() {
                   }}>
                     {isDone ? '✓' : idx + 1}
                   </div>
-                  <div className="step-lbl" style={{ color: textColor }}>{STEP_SHORT[step]}</div>
+                  <div className="step-lbl" style={{ color: textColor }}>{stepShort[step]}</div>
                 </div>
               )
             })}
@@ -429,7 +436,7 @@ export default function TripDetail() {
                 <div style={{ background: 'var(--surface2)', borderRadius: 8, padding: '.6rem .8rem', border: '1px solid var(--border)', flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '.35rem' }}>
                     <span style={{ background: `${color}20`, color, padding: '.18rem .6rem', borderRadius: 999, fontSize: '.8rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                      {STATUS_LABELS[h.status] || h.status}
+                      {t(`status_${h.status}`)}
                     </span>
                     <span style={{ fontSize: '.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                       {new Date(h.changedAt).toLocaleString(undefined, { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}

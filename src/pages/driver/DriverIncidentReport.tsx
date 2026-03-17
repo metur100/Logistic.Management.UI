@@ -4,22 +4,24 @@ import { useTranslation } from 'react-i18next'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
 
-const INCIDENT_TYPES: { key: string; icon: string }[] = [
-  { key: 'Breakdown',     icon: '🔧' },
-  { key: 'Accident',      icon: '💥' },
-  { key: 'Delay',         icon: '⏰' },
-  { key: 'Road Closure',  icon: '🚧' },
-  { key: 'Cargo Damage',  icon: '📦' },
-  { key: 'Weather',       icon: '🌧️' },
-  { key: 'Border Delay',  icon: '🛂' },
-  { key: 'Other',         icon: '📋' },
+const INCIDENT_TYPES: { key: string; icon: string; labelKey: string }[] = [
+  { key: 'Breakdown',    icon: '🔧', labelKey: 'incident_type_breakdown' },
+  { key: 'Accident',     icon: '💥', labelKey: 'incident_type_accident' },
+  { key: 'Delay',        icon: '⏰', labelKey: 'incident_type_delay' },
+  { key: 'Road Closure', icon: '🚧', labelKey: 'incident_type_road_closure' },
+  { key: 'Cargo Damage', icon: '📦', labelKey: 'incident_type_cargo_damage' },
+  { key: 'Weather',      icon: '🌧️', labelKey: 'incident_type_weather' },
+  { key: 'Border Delay', icon: '🛂', labelKey: 'incident_type_border_delay' },
+  { key: 'Other',        icon: '📋', labelKey: 'incident_type_other' },
 ]
 
+
 const SEV_META = {
-  Low:    { icon: '🟢', color: '#16a34a', bg: '#f0fdf4', label: 'Low' },
-  Medium: { icon: '🟡', color: '#d97706', bg: '#fffbeb', label: 'Medium' },
-  High:   { icon: '🔴', color: '#dc2626', bg: '#fef2f2', label: 'High' },
+  Low:    { icon: '🟢', color: '#16a34a', bg: '#f0fdf4', labelKey: 'severity_low' },
+  Medium: { icon: '🟡', color: '#d97706', bg: '#fffbeb', labelKey: 'severity_medium' },
+  High:   { icon: '🔴', color: '#dc2626', bg: '#fef2f2', labelKey: 'severity_high' },
 }
+
 
 export default function DriverIncidentReport() {
   const { t } = useTranslation()
@@ -117,7 +119,7 @@ export default function DriverIncidentReport() {
           fontSize: '.875rem', fontWeight: 600,
           display: 'flex', alignItems: 'center', gap: '.35rem'
         }}>
-        ← {t('back')}
+        {t('back')}
       </button>
 
       {/* Header */}
@@ -148,24 +150,19 @@ export default function DriverIncidentReport() {
             <h2 style={{ fontWeight: 700, fontSize: '.95rem' }}>{t('incident_type')}</h2>
           </div>
           <div className="inc-type-grid">
-            {INCIDENT_TYPES.map(({ key, icon }) => {
-              const isActive = form.type === key
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  className={`inc-type-btn${isActive ? ' active' : ''}`}
-                  onClick={() => setForm({ ...form, type: key })}
-                  style={isActive ? {
-                    borderColor: 'var(--primary)',
-                    background: 'var(--primary-light)',
-                    color: 'var(--primary)'
-                  } : {}}>
-                  <span style={{ fontSize: '1.3rem' }}>{icon}</span>
-                  {key}
-                </button>
-              )
-            })}
+{INCIDENT_TYPES.map(({ key, icon, labelKey }) => {
+  const isActive = form.type === key
+  return (
+    <button key={key} type="button"
+      className={`inc-type-btn${isActive ? ' active' : ''}`}
+      onClick={() => setForm({ ...form, type: key })}
+      style={isActive ? { borderColor: 'var(--primary)', background: 'var(--primary-light)', color: 'var(--primary)' } : {}}>
+      <span style={{ fontSize: '1.3rem' }}>{icon}</span>
+      {t(labelKey)}
+    </button>
+  )
+})}
+
           </div>
         </div>
 
@@ -180,24 +177,19 @@ export default function DriverIncidentReport() {
             <h2 style={{ fontWeight: 700, fontSize: '.95rem' }}>{t('severity')}</h2>
           </div>
           <div className="inc-sev-grid">
-            {(Object.entries(SEV_META) as [string, typeof SEV_META.Low][]).map(([key, m]) => {
-              const isActive = form.severity === key
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  className={`inc-sev-btn${isActive ? ' active' : ''}`}
-                  onClick={() => setForm({ ...form, severity: key })}
-                  style={isActive ? {
-                    borderColor: m.color,
-                    background: m.bg,
-                    color: m.color
-                  } : {}}>
-                  <span style={{ fontSize: '1.4rem' }}>{m.icon}</span>
-                  {m.label}
-                </button>
-              )
-            })}
+{(Object.entries(SEV_META) as [string, typeof SEV_META.Low][]).map(([key, m]) => {
+  const isActive = form.severity === key
+  return (
+    <button key={key} type="button"
+      className={`inc-sev-btn${isActive ? ' active' : ''}`}
+      onClick={() => setForm({ ...form, severity: key })}
+      style={isActive ? { borderColor: m.color, background: m.bg, color: m.color } : {}}>
+      <span style={{ fontSize: '1.4rem' }}>{m.icon}</span>
+      {t(m.labelKey)}
+    </button>
+  )
+})}
+
           </div>
         </div>
 
