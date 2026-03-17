@@ -44,14 +44,14 @@ export interface TripDetail {
   expectedArrivalDate: string | null
   actualDepartureDate: string | null
   actualArrivalDate: string | null
-  remarks: string | null
+  remarks?: string | null
   podNumber: string | null
   podReceived: boolean
   loadingArrivalTime: string | null
   loadingEndTime: string | null
   unloadingArrivalTime: string | null
   unloadingEndTime: string | null
-  vehicle: { registrationNo: string } | null
+  vehicle: { registrationNumber: string } | null
   cargoItems: CargoItem[]
   statusHistory: StatusHistoryEntry[]
 }
@@ -77,6 +77,10 @@ export interface StatusHistoryEntry {
 export interface UpdateTripStatusPayload {
   status: TripStatus
   remarks: string
+  loadingArrivalTime?: string | null
+  loadingEndTime?: string | null
+  unloadingArrivalTime?: string | null
+  unloadingEndTime?: string | null
 }
 
 export interface SubmitPodPayload {
