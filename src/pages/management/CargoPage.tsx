@@ -25,6 +25,14 @@ interface CargoFormState {
   specialInstructions: string
 }
 
+const CARGO_TYPE_LABELS: Record<string, string> = {
+  General: 'cargo_type_general',
+  Fragile: 'cargo_type_fragile',
+  Hazardous: 'cargo_type_hazardous',
+  Perishable: 'cargo_type_perishable',
+  Oversized: 'cargo_type_oversized',
+}
+
 const TYPES = ['General', 'Fragile', 'Hazardous', 'Perishable', 'Oversized']
 
 const TYPE_META: Record<string, { color: string; bg: string; icon: string }> = {
@@ -41,15 +49,11 @@ const empty: CargoFormState = {
 }
 
 function TypeBadge({ type }: { type: string }) {
+  const { t } = useTranslation()
   const m = TYPE_META[type] || { color: '#3730a3', bg: '#e0e7ff', icon: '📦' }
   return (
-    <span style={{
-      background: m.bg, color: m.color,
-      padding: '.18rem .55rem', borderRadius: 999,
-      fontSize: '.72rem', fontWeight: 700,
-      display: 'inline-flex', alignItems: 'center', gap: '.25rem'
-    }}>
-      {m.icon} {type || '—'}
+    <span style={{ background: m.bg, color: m.color, padding: '.18rem .55rem', borderRadius: 999, fontSize: '.72rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '.25rem' }}>
+      {m.icon} {t(CARGO_TYPE_LABELS[type] || type)}
     </span>
   )
 }
@@ -468,25 +472,18 @@ export default function CargoPage() {
                   {t('cargo_type')}
                 </label>
                 <div className="cargo-type-grid">
-                  {TYPES.map(tp => {
-                    const m = TYPE_META[tp]
-                    const isActive = form.cargoType === tp
-                    return (
-                      <button
-                        key={tp}
-                        type="button"
-                        className={`cargo-type-btn ${isActive ? 'active' : ''}`}
-                        onClick={() => setForm({ ...form, cargoType: tp })}
-                        style={isActive ? {
-                          borderColor: m.color,
-                          background: m.bg,
-                          color: m.color
-                        } : {}}>
-                        <span style={{ fontSize: '1.1rem' }}>{m.icon}</span>
-                        {tp}
-                      </button>
-                    )
-                  })}
+{TYPES.map(tp => {
+  const m = TYPE_META[tp]
+  const isActive = form.cargoType === tp
+  return (
+    <button key={tp} type="button" className={`cargo-type-btn ${isActive ? 'active' : ''}`}
+      onClick={() => setForm({ ...form, cargoType: tp })}
+      style={isActive ? { borderColor: m.color, background: m.bg, color: m.color } : {}}>
+      <span style={{ fontSize: '1.1rem' }}>{m.icon}</span>
+      {t(CARGO_TYPE_LABELS[tp] || tp)}   {/* ← translated */}
+    </button>
+  )
+})}
                 </div>
               </div>
 

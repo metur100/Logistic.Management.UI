@@ -29,6 +29,15 @@ const empty: VehicleForm = {
   capacity: '', ownershipType: 'Own', ownerName: '', ownerPhone: ''
 }
 
+const VEHICLE_TYPE_LABELS: Record<string, string> = {
+  Truck: 'veh_type_truck', Container: 'veh_type_container',
+  Tanker: 'veh_type_tanker', Refrigerated: 'veh_type_refrigerated',
+  Flatbed: 'veh_type_flatbed', 'Mini Truck': 'veh_type_mini_truck',
+}
+const OWN_TYPE_LABELS: Record<string, string> = {
+  Own: 'own_type_own', Market: 'own_type_market', Leased: 'own_type_leased',
+}
+
 const TYPES = ['Truck', 'Container', 'Tanker', 'Refrigerated', 'Flatbed', 'Mini Truck']
 const OWN_TYPES = ['Own', 'Market', 'Leased']
 
@@ -48,30 +57,22 @@ const OWN_META: Record<string, { color: string; bg: string }> = {
 }
 
 function TypeBadge({ type }: { type?: string }) {
+  const { t } = useTranslation()
   if (!type) return <span style={{ color: 'var(--text-muted)' }}>—</span>
   const m = TYPE_META[type] || { icon: '🚛', color: '#1e40af', bg: '#dbeafe' }
   return (
-    <span style={{
-      background: m.bg, color: m.color,
-      padding: '.18rem .55rem', borderRadius: 999,
-      fontSize: '.72rem', fontWeight: 700,
-      display: 'inline-flex', alignItems: 'center', gap: '.25rem'
-    }}>
-      {m.icon} {type}
+    <span style={{ background: m.bg, color: m.color, padding: '.18rem .55rem', borderRadius: 999, fontSize: '.72rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '.25rem' }}>
+      {m.icon} {t(VEHICLE_TYPE_LABELS[type] || type)}
     </span>
   )
 }
-
 function OwnBadge({ type }: { type?: string }) {
+  const { t } = useTranslation()
   if (!type) return <span style={{ color: 'var(--text-muted)' }}>—</span>
   const m = OWN_META[type] || { color: '#64748b', bg: 'var(--surface2)' }
   return (
-    <span style={{
-      background: m.bg, color: m.color,
-      padding: '.18rem .55rem', borderRadius: 999,
-      fontSize: '.72rem', fontWeight: 700
-    }}>
-      {type}
+    <span style={{ background: m.bg, color: m.color, padding: '.18rem .55rem', borderRadius: 999, fontSize: '.72rem', fontWeight: 700 }}>
+      {t(OWN_TYPE_LABELS[type] || type)}
     </span>
   )
 }
@@ -502,21 +503,22 @@ export default function VehiclesPage() {
                   {t('type')}
                 </label>
                 <div className="veh-type-grid">
-                  {TYPES.map(tp => {
-                    const m = TYPE_META[tp] || { icon: '🚛', color: '#1e40af', bg: '#dbeafe' }
-                    const isActive = form.type === tp
-                    return (
-                      <button
-                        key={tp}
-                        type="button"
-                        className={`veh-type-btn${isActive ? ' active' : ''}`}
-                        onClick={() => setField('type', tp)}
-                        style={isActive ? { borderColor: m.color, background: m.bg, color: m.color } : {}}>
-                        <span style={{ fontSize: '1.2rem' }}>{m.icon}</span>
-                        {tp}
-                      </button>
-                    )
-                  })}
+{TYPES.map(tp => {
+  const m = TYPE_META[tp] || { icon: '🚛', color: '#1e40af', bg: '#dbeafe' }
+  const isActive = form.type === tp
+  return (
+    <button
+      key={tp}
+      type="button"
+      className={`veh-type-btn${isActive ? ' active' : ''}`}
+      onClick={() => setField('type', tp)}
+      style={isActive ? { borderColor: m.color, background: m.bg, color: m.color } : {}}>
+      <span style={{ fontSize: '1.2rem' }}>{m.icon}</span>
+      {t(`veh_type_${tp.toLowerCase().replace(' ', '_')}`)}
+    </button>
+  )
+})}
+
                 </div>
               </div>
 

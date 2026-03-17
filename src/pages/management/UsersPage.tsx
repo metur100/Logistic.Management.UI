@@ -27,6 +27,11 @@ const empty: UserForm = {
   role: 'Driver', phone: '', licenseNumber: ''
 }
 
+const ROLE_LABELS: Record<string, string> = {
+  Driver: 'role_driver', Manager: 'role_manager', Admin: 'role_admin',
+}
+
+
 const ROLE_META: Record<string, { color: string; bg: string; icon: string }> = {
   Driver:  { color: '#1e40af', bg: '#dbeafe', icon: '🚛' },
   Manager: { color: '#7e22ce', bg: '#f3e8ff', icon: '📋' },
@@ -36,15 +41,11 @@ const ROLE_META: Record<string, { color: string; bg: string; icon: string }> = {
 const ROLES = ['Driver', 'Manager', 'Admin']
 
 function RoleBadge({ role }: { role: string }) {
+  const { t } = useTranslation()
   const m = ROLE_META[role] || { color: '#64748b', bg: 'var(--surface2)', icon: '👤' }
   return (
-    <span style={{
-      background: m.bg, color: m.color,
-      padding: '.18rem .55rem', borderRadius: 999,
-      fontSize: '.72rem', fontWeight: 700,
-      display: 'inline-flex', alignItems: 'center', gap: '.25rem'
-    }}>
-      {m.icon} {role}
+    <span style={{ background: m.bg, color: m.color, padding: '.18rem .55rem', borderRadius: 999, fontSize: '.72rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '.25rem' }}>
+      {m.icon} {t(ROLE_LABELS[role] || role)}
     </span>
   )
 }
@@ -483,25 +484,21 @@ export default function UsersPage() {
                       {t('role')}
                     </label>
                     <div className="role-grid">
-                      {ROLES.map(r => {
-                        const m = ROLE_META[r]
-                        const isActive = form.role === r
-                        return (
-                          <button
-                            key={r}
-                            type="button"
-                            className={`role-btn${isActive ? ' active' : ''}`}
-                            onClick={() => setForm({ ...form, role: r })}
-                            style={isActive ? {
-                              borderColor: m.color,
-                              background: m.bg,
-                              color: m.color
-                            } : {}}>
-                            <span style={{ fontSize: '1.2rem' }}>{m.icon}</span>
-                            {r}
-                          </button>
-                        )
-                      })}
+{ROLES.map(r => {
+  const m = ROLE_META[r]
+  const isActive = form.role === r
+  return (
+    <button
+      key={r}
+      type="button"
+      className={`role-btn${isActive ? ' active' : ''}`}
+      onClick={() => setForm({ ...form, role: r })}
+      style={isActive ? { borderColor: m.color, background: m.bg, color: m.color } : {}}>
+      <span style={{ fontSize: '1.2rem' }}>{m.icon}</span>
+      {t(`role_${r.toLowerCase()}`)}
+    </button>
+  )
+})}
                     </div>
                   </div>
                 </>
