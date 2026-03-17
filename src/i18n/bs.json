@@ -377,7 +377,8 @@
     "my_incidents": "Moji incidenti",
   "severity_medium": "Srednje",
   "severity_high": "Visoko",
-
+  "dispatch_team": "Dispečerski tim",
+      "select_contact_to_chat": "Odaberite kontakt za početak razgovora",
   "incident_type_breakdown": "Kvar",
   "incident_type_accident": "Nesreća",
   "incident_type_delay": "Kašnjenje",

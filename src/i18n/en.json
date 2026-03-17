@@ -374,8 +374,9 @@
   "resolution_notes": "Resolution Notes",
   "describe_resolution": "Describe how this was resolved...",
   "mark_resolved": "Mark as Resolved",
-
+  "dispatch_team": "Dispatch Team",
       "my_incidents": "My Incidents",
+      "select_contact_to_chat": "Select a contact to start chatting",
 
   "driver_home_welcome": "Welcome, {{name}}!",
   "active_trips_label": "Active Transports",
