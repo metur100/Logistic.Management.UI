@@ -36,7 +36,6 @@ export default function ManagementLayout() {
     { to: '/management/users', label: t('nav_users'), icon: '👥' },
     { to: '/management/messages', label: t('messages'), icon: '💬', badge: unread },
     { to: '/management/incidents', label: t('incidents'), icon: '🚨' },
-    ...(user?.role === 'Admin' ? [{ to: '/management/tickets', label: t('support_tickets'), icon: '🎫' }] : []),
   ]
 
   const SidebarContent = () => (
@@ -92,6 +91,28 @@ export default function ManagementLayout() {
             ) : null}
           </NavLink>
         ))}
+
+        {user?.role === 'Admin' && (
+          <>
+            <div style={{ margin: '.9rem .35rem', borderTop: '1px solid rgba(255,255,255,.1)' }} />
+            <Link
+              to="/admin"
+              onClick={() => setSidebarOpen(false)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '.75rem',
+                padding: '.65rem .85rem', textDecoration: 'none',
+                color: '#fca5a5',
+                background: 'rgba(244,63,94,.12)',
+                border: '1px solid rgba(244,63,94,.3)',
+                borderRadius: 10,
+                fontWeight: 600,
+                fontSize: '.875rem',
+              }}>
+              <span style={{ fontSize: '1rem', flexShrink: 0 }}>🛡️</span>
+              <span style={{ flex: 1 }}>{t('admin_panel')}</span>
+            </Link>
+          </>
+        )}
       </nav>
 
       {/* Footer */}

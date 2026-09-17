@@ -458,5 +458,17 @@
   "user_blocked": "Korisnik blokiran",
   "user_unblocked": "Korisnik odblokiran",
 
-  "start_route": "Pokreni rutu"
+  "start_route": "Pokreni rutu",
+
+  "admin_panel": "Admin Panel",
+  "nav_overview": "Pregled",
+  "admin_overview_subtitle": "Statistika sistema i brzi pristup",
+  "total_users": "Ukupno korisnika",
+  "managers": "Menadžeri",
+  "admins": "Administratori",
+  "blocked_users": "Blokirani korisnici",
+  "open_tickets": "Otvoreni tiketi",
+  "go_to_management": "Idi na Management",
+  "manage_users": "Upravljaj korisnicima",
+  "view_tickets": "Pregledaj tikete"
 }

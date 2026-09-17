@@ -32,7 +32,7 @@ export default function LoginPage() {
       const res = await api.post<LoginResponse>('/auth/login', form)
       login(res.data)
       toast.success(t('welcome', { name: res.data.fullName }))
-      nav(res.data.role === 'Driver' ? '/driver' : '/management')
+      nav(res.data.role === 'Driver' ? '/driver' : res.data.role === 'Admin' ? '/admin' : '/management')
     } catch {
       toast.error(t('invalid_credentials'))
     } finally {

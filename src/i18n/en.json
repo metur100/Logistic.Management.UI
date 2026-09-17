@@ -463,5 +463,17 @@
   "user_blocked": "User blocked",
   "user_unblocked": "User unblocked",
 
-  "start_route": "Start Route"
+  "start_route": "Start Route",
+
+  "admin_panel": "Admin Panel",
+  "nav_overview": "Overview",
+  "admin_overview_subtitle": "System stats & quick access",
+  "total_users": "Total Users",
+  "managers": "Managers",
+  "admins": "Admins",
+  "blocked_users": "Blocked Users",
+  "open_tickets": "Open Tickets",
+  "go_to_management": "Go to Management",
+  "manage_users": "Manage Users",
+  "view_tickets": "View Tickets"
 }

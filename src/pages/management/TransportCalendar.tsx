@@ -51,14 +51,17 @@ export default function TransportCalendar() {
     <div style={{ width: '100%', maxWidth: '100%', overflowX: 'hidden', boxSizing: 'border-box' }}>
       <style>{`
         .cal-toolbar { display: flex; align-items: center; gap: .65rem; flex-wrap: wrap; }
-        .cal-pill-group { display: flex; gap: .3rem; background: var(--surface2); border-radius: 999px; padding: .2rem; }
+        .cal-pill-group { display: flex; gap: .3rem; flex-wrap: wrap; background: var(--surface2); border-radius: 999px; padding: .2rem; }
         .cal-pill {
           padding: .35rem .8rem; border-radius: 999px; border: none; cursor: pointer;
           font-size: .78rem; font-weight: 700; background: transparent; color: var(--text-muted);
           transition: all .15s; white-space: nowrap;
         }
         .cal-pill.active { background: var(--primary); color: #fff; }
-        @media (max-width: 700px) { .cal-toolbar { flex-direction: column; align-items: stretch; } }
+        @media (max-width: 700px) {
+          .cal-toolbar { flex-direction: column; align-items: stretch; }
+          .cal-pill-group { justify-content: center; margin-left: 0 !important; }
+        }
       `}</style>
 
       {/* Header */}

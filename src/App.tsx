@@ -17,6 +17,10 @@ import TransportCalendar from './pages/management/TransportCalendar'
 import SupportTickets from './pages/management/SupportTickets'
 import SupportPage from './pages/management/SupportPage'
 
+// Admin
+import AdminLayout from './pages/admin/AdminLayout'
+import AdminOverview from './pages/admin/AdminOverview'
+
 // Driver
 import DriverLayout from './pages/driver/DriverLayout'
 import DriverHome from './pages/driver/DriverHome'
@@ -63,9 +67,9 @@ function PrivateRoute({ children, roles }: PrivateRouteProps) {
 function RoleRedirect() {
   const { user } = useAuth()
   if (!user) return <Navigate to="/login" replace />
-  return user.role === 'Driver'
-    ? <Navigate to="/driver" replace />
-    : <Navigate to="/management" replace />
+  if (user.role === 'Driver') return <Navigate to="/driver" replace />
+  if (user.role === 'Admin') return <Navigate to="/admin" replace />
+  return <Navigate to="/management" replace />
 }
 
 export default function App() {
@@ -110,6 +114,19 @@ export default function App() {
             <Route path="calendar"        element={<TransportCalendar />} />
             <Route path="tickets"         element={<SupportTickets />} />
             <Route path="support"         element={<SupportPage />} />
+          </Route>
+
+          {/* ── Admin ──────────────────────────────────────── */}
+          <Route
+            path="/admin"
+            element={
+              <PrivateRoute roles={['Admin']}>
+                <AdminLayout />
+              </PrivateRoute>
+            }>
+            <Route index          element={<AdminOverview />} />
+            <Route path="users"   element={<UsersPage />} />
+            <Route path="tickets" element={<SupportTickets />} />
           </Route>
 
           {/* ── Driver ─────────────────────────────────────── */}

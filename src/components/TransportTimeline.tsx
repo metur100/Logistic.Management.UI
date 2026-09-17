@@ -77,6 +77,22 @@ export default function TransportTimeline({ blocks, loading, rangeStart, days, o
   const minColWidth = days <= 3 ? 220 : days <= 7 ? 130 : 90
   const labelWidth = 170
 
+  // Mobile agenda: trips per resource, sorted chronologically
+  const mobileRows = rows.map(row => ({
+    ...row,
+    trips: [...row.trips].sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
+  }))
+
+  const fmtRange = (startIso: string, endIso: string): string => {
+    const s = new Date(startIso)
+    const e = new Date(endIso)
+    if (isNaN(s.getTime()) || isNaN(e.getTime())) return '—'
+    const sameDay = startOfDay(s).getTime() === startOfDay(e).getTime()
+    return sameDay
+      ? `${dowFmt.format(s)} ${dateFmt.format(s)} · ${fmtTime(startIso)}–${fmtTime(endIso)}`
+      : `${dowFmt.format(s)} ${dateFmt.format(s)} ${fmtTime(startIso)} – ${dowFmt.format(e)} ${dateFmt.format(e)} ${fmtTime(endIso)}`
+  }
+
   return (
     <div style={{
       background: 'var(--surface)', border: '1px solid var(--border)',
@@ -84,6 +100,33 @@ export default function TransportTimeline({ blocks, loading, rangeStart, days, o
     }}>
       <style>{`
         .tt-scroll { overflow-x: auto; }
+        .tt-mobile-list { display: none; }
+        @media (max-width: 860px) {
+          .tt-scroll { display: none; }
+          .tt-mobile-list { display: block; padding: .85rem; }
+        }
+        .tt-m-group { margin-bottom: 1.1rem; }
+        .tt-m-group:last-child { margin-bottom: 0; }
+        .tt-m-heading {
+          font-size: .78rem; font-weight: 800; color: var(--text-muted);
+          text-transform: uppercase; letter-spacing: .04em;
+          margin-bottom: .55rem; padding-bottom: .35rem;
+          border-bottom: 2px solid var(--border);
+        }
+        .tt-m-card {
+          background: var(--surface2); border: 1px solid var(--border);
+          border-left: 4px solid transparent;
+          border-radius: var(--radius-sm); padding: .65rem .75rem;
+          margin-bottom: .55rem; box-shadow: var(--shadow-sm);
+          cursor: pointer; transition: box-shadow .15s;
+        }
+        .tt-m-card:last-child { margin-bottom: 0; }
+        .tt-m-card:hover { box-shadow: var(--shadow); }
+        .tt-m-card-top { display: flex; justify-content: space-between; align-items: center; gap: .5rem; margin-bottom: .35rem; }
+        .tt-m-card-trip { font-weight: 800; font-size: .85rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .tt-m-card-status { padding: .18rem .55rem; border-radius: 999px; font-size: .66rem; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+        .tt-m-card-route { font-size: .82rem; font-weight: 600; color: var(--text); margin-bottom: .25rem; word-break: break-word; }
+        .tt-m-card-time { font-size: .74rem; color: var(--text-muted); }
         .tt-grid {
           display: grid;
           grid-template-columns: ${labelWidth}px repeat(${days}, minmax(${minColWidth}px, 1fr));
@@ -195,6 +238,33 @@ export default function TransportTimeline({ blocks, loading, rangeStart, days, o
             </Fragment>
           ))}
         </div>
+      </div>
+
+      {/* Mobile agenda — resource groups with stacked trip cards, no horizontal scroll */}
+      <div className="tt-mobile-list">
+        {mobileRows.map(row => (
+          <div key={row.resourceId} className="tt-m-group">
+            <div className="tt-m-heading">{row.resourceLabel}</div>
+            {row.trips.map(trip => {
+              const color = STATUS_COLORS[trip.status] || '#64748b'
+              const statusLabel = STATUS_LABELS[trip.status]?.[i18n.language === 'bs' ? 'bs' : 'en'] || trip.status
+              return (
+                <div
+                  key={trip.tripId}
+                  className="tt-m-card"
+                  style={{ borderLeftColor: color }}
+                  onClick={() => onBlockClick(trip.tripId)}>
+                  <div className="tt-m-card-top">
+                    <span className="tt-m-card-trip">{trip.tripNumber}</span>
+                    <span className="tt-m-card-status" style={{ background: `${color}20`, color }}>{statusLabel}</span>
+                  </div>
+                  <div className="tt-m-card-route">{trip.originLocation} → {trip.destinationLocation}</div>
+                  <div className="tt-m-card-time">{fmtRange(trip.start, trip.end)}</div>
+                </div>
+              )
+            })}
+          </div>
+        ))}
       </div>
     </div>
   )
