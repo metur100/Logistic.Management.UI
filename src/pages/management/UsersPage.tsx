@@ -2,6 +2,15 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
+import { useAuth } from '../../context/AuthContext'
+import { blockUser, unblockUser, resetUserPassword } from '../../api/tickets'
+
+function generateRandomPassword(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'
+  let out = ''
+  for (let i = 0; i < 10; i++) out += chars[Math.floor(Math.random() * chars.length)]
+  return out
+}
 
 interface User {
   id: number
@@ -52,11 +61,18 @@ function RoleBadge({ role }: { role: string }) {
 
 export default function UsersPage() {
   const { t } = useTranslation()
+  const { user: currentUser } = useAuth()
+  const isAdmin = currentUser?.role === 'Admin'
   const [users, setUsers] = useState<User[]>([])
   const [modal, setModal] = useState(false)
   const [form, setForm] = useState<UserForm>(empty)
   const [editId, setEditId] = useState<number | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [blockingId, setBlockingId] = useState<number | null>(null)
+  const [resetUser, setResetUser] = useState<User | null>(null)
+  const [newPassword, setNewPassword] = useState('')
+  const [resetting, setResetting] = useState(false)
+  const [revealedPassword, setRevealedPassword] = useState<string | null>(null)
 
   const load = () =>
     api.get('/users').then(r => setUsers(r.data)).catch(() => toast.error(t('failed')))
@@ -95,17 +111,40 @@ export default function UsersPage() {
     }
   }
 
-  const toggle = async (id: number, active: boolean) => {
+  const toggleBlock = async (u: User) => {
+    setBlockingId(u.id)
     try {
-      const u = users.find(x => x.id === id)
-      if (!u) return
-      await api.put(`/users/${id}`, {
-        fullName: u.fullName, phone: u.phone,
-        licenseNumber: u.licenseNumber, isActive: !active
-      })
+      if (u.isActive) await blockUser(u.id)
+      else await unblockUser(u.id)
       load()
-      toast.success(t('updated'))
-    } catch { toast.error(t('error')) }
+      toast.success(u.isActive ? t('user_blocked') : t('user_unblocked'))
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } }
+      toast.error(e.response?.data?.message || t('error'))
+    } finally {
+      setBlockingId(null)
+    }
+  }
+
+  const openReset = (u: User) => {
+    setResetUser(u)
+    setNewPassword('')
+    setRevealedPassword(null)
+  }
+
+  const submitReset = async () => {
+    if (!resetUser || !newPassword) return
+    setResetting(true)
+    try {
+      await resetUserPassword(resetUser.id, { newPassword })
+      toast.success(t('password_reset_success'))
+      setRevealedPassword(newPassword)
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } }
+      toast.error(e.response?.data?.message || t('error'))
+    } finally {
+      setResetting(false)
+    }
   }
 
   return (
@@ -284,16 +323,27 @@ export default function UsersPage() {
                         onClick={() => openEdit(u)}>
                         {t('edit')}
                       </button>
-                      <button
-                        className="btn btn-outline"
-                        style={{
-                          padding: '.3rem .6rem', fontSize: '.75rem',
-                          color: u.isActive ? '#dc2626' : '#16a34a',
-                          borderColor: u.isActive ? '#fca5a5' : '#86efac'
-                        }}
-                        onClick={() => toggle(u.id, u.isActive)}>
-                        {u.isActive ? t('deactivate') : t('activate')}
-                      </button>
+                      {isAdmin && (
+                        <>
+                          <button
+                            className="btn btn-outline"
+                            style={{ padding: '.3rem .6rem', fontSize: '.75rem' }}
+                            onClick={() => openReset(u)}>
+                            🔑 {t('reset_password')}
+                          </button>
+                          <button
+                            className="btn btn-outline"
+                            disabled={blockingId === u.id}
+                            style={{
+                              padding: '.3rem .6rem', fontSize: '.75rem',
+                              color: u.isActive ? '#dc2626' : '#16a34a',
+                              borderColor: u.isActive ? '#fca5a5' : '#86efac'
+                            }}
+                            onClick={() => toggleBlock(u)}>
+                            {u.isActive ? t('block') : t('unblock')}
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -380,23 +430,34 @@ export default function UsersPage() {
               )}
 
               {/* Actions */}
-              <div style={{ display: 'flex', gap: '.5rem' }}>
+              <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap' }}>
                 <button
                   className="btn btn-outline"
                   style={{ flex: 1, padding: '.4rem', fontSize: '.8rem' }}
                   onClick={() => openEdit(u)}>
                   ✏️ {t('edit')}
                 </button>
-                <button
-                  className="btn btn-outline"
-                  style={{
-                    flex: 1, padding: '.4rem', fontSize: '.8rem',
-                    color: u.isActive ? '#dc2626' : '#16a34a',
-                    borderColor: u.isActive ? '#fca5a5' : '#86efac'
-                  }}
-                  onClick={() => toggle(u.id, u.isActive)}>
-                  {u.isActive ? `🔒 ${t('deactivate')}` : `✅ ${t('activate')}`}
-                </button>
+                {isAdmin && (
+                  <>
+                    <button
+                      className="btn btn-outline"
+                      style={{ flex: 1, padding: '.4rem', fontSize: '.8rem' }}
+                      onClick={() => openReset(u)}>
+                      🔑 {t('reset_password')}
+                    </button>
+                    <button
+                      className="btn btn-outline"
+                      disabled={blockingId === u.id}
+                      style={{
+                        flex: 1, padding: '.4rem', fontSize: '.8rem',
+                        color: u.isActive ? '#dc2626' : '#16a34a',
+                        borderColor: u.isActive ? '#fca5a5' : '#86efac'
+                      }}
+                      onClick={() => toggleBlock(u)}>
+                      {u.isActive ? `🔒 ${t('block')}` : `✅ ${t('unblock')}`}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           )
@@ -546,6 +607,116 @@ export default function UsersPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reset password modal */}
+      {resetUser && (
+        <div
+          className="usr-modal-overlay"
+          onClick={e => { if (e.target === e.currentTarget) setResetUser(null) }}>
+          <div className="usr-modal-box">
+            <div className="modal-drag-handle" />
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div>
+                <h2 style={{ fontWeight: 800, fontSize: '1.05rem', marginBottom: '.1rem' }}>
+                  🔑 {t('reset_password')}
+                </h2>
+                <p style={{ fontSize: '.75rem', color: 'var(--text-muted)', margin: 0 }}>
+                  {resetUser.fullName} (@{resetUser.username})
+                </p>
+              </div>
+              <button
+                onClick={() => setResetUser(null)}
+                style={{
+                  background: 'var(--surface2)', border: '1px solid var(--border)',
+                  borderRadius: '50%', width: 34, height: 34, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '.9rem', flexShrink: 0
+                }}>
+                ✕
+              </button>
+            </div>
+
+            {!revealedPassword ? (
+              <>
+                <div className="form-group">
+                  <label style={{ fontSize: '.8rem', fontWeight: 700 }}>{t('new_password')}</label>
+                  <div style={{ display: 'flex', gap: '.5rem' }}>
+                    <input
+                      className="form-control"
+                      placeholder={t('new_password')}
+                      value={newPassword}
+                      onChange={e => setNewPassword(e.target.value)}
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      style={{ padding: '.5rem .75rem', fontSize: '.8rem', whiteSpace: 'nowrap' }}
+                      onClick={() => setNewPassword(generateRandomPassword())}>
+                      🎲 {t('generate')}
+                    </button>
+                  </div>
+                </div>
+                <p style={{ fontSize: '.75rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+                  {t('reset_password_hint')}
+                </p>
+                <div style={{ display: 'flex', gap: '.75rem' }}>
+                  <button
+                    className="btn btn-primary"
+                    disabled={resetting || !newPassword}
+                    onClick={submitReset}
+                    style={{ flex: 1, padding: '.7rem', fontSize: '.9rem', fontWeight: 700 }}>
+                    {resetting ? t('saving') : t('reset_password')}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    onClick={() => setResetUser(null)}
+                    style={{ padding: '.7rem 1.25rem', fontSize: '.9rem' }}>
+                    {t('cancel')}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{
+                  background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 'var(--radius-sm)',
+                  padding: '1rem', marginBottom: '1rem'
+                }}>
+                  <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#16a34a', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: '.5rem' }}>
+                    ✅ {t('password_reset_success')}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+                    <code style={{
+                      fontSize: '1rem', fontWeight: 800, background: 'var(--surface)',
+                      padding: '.4rem .7rem', borderRadius: 8, border: '1px solid var(--border)', flex: 1
+                    }}>
+                      {revealedPassword}
+                    </code>
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      style={{ padding: '.4rem .6rem', fontSize: '.8rem' }}
+                      onClick={() => { navigator.clipboard?.writeText(revealedPassword); toast.success(t('copied')) }}>
+                      📋
+                    </button>
+                  </div>
+                  <p style={{ fontSize: '.75rem', color: '#166534', marginTop: '.6rem', marginBottom: 0 }}>
+                    {t('reset_password_relay_hint')}
+                  </p>
+                </div>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => setResetUser(null)}
+                  style={{ width: '100%', padding: '.7rem', fontSize: '.9rem', fontWeight: 700 }}>
+                  {t('close')}
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

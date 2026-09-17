@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
@@ -30,11 +30,13 @@ export default function ManagementLayout() {
   const navItems = [
     { to: '/management', label: t('nav_dashboard'), end: true, icon: '📊' },
     { to: '/management/trips', label: t('nav_trips'), icon: '🚛' },
+    { to: '/management/calendar', label: t('nav_calendar'), icon: '🗓️' },
     { to: '/management/cargo', label: t('nav_cargo'), icon: '📦' },
     { to: '/management/vehicles', label: t('nav_vehicles'), icon: '🚗' },
     { to: '/management/users', label: t('nav_users'), icon: '👥' },
     { to: '/management/messages', label: t('messages'), icon: '💬', badge: unread },
     { to: '/management/incidents', label: t('incidents'), icon: '🚨' },
+    ...(user?.role === 'Admin' ? [{ to: '/management/tickets', label: t('support_tickets'), icon: '🎫' }] : []),
   ]
 
   const SidebarContent = () => (
@@ -114,6 +116,14 @@ export default function ManagementLayout() {
             <div style={{ fontSize: '.68rem', color: 'rgba(255,255,255,.4)' }}>{user?.role}</div>
           </div>
         </div>
+        <Link to="/management/support" onClick={() => setSidebarOpen(false)} style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.4rem',
+          padding: '.5rem', marginBottom: '.6rem', borderRadius: 8,
+          background: 'rgba(255,255,255,.07)', color: 'rgba(255,255,255,.75)',
+          textDecoration: 'none', fontSize: '.8rem', fontWeight: 600
+        }}>
+          🎫 {t('support')}
+        </Link>
         <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center' }}>
           <LanguageSwitcher />
           <button onClick={handleLogout} style={{

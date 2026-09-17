@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../context/AuthContext'
 import api from '../../api/axios'
@@ -27,6 +27,7 @@ export default function DriverLayout() {
   const navLinks = [
     { to: '/driver',          label: t('home'),             icon: '🏠', end: true },
     { to: '/driver/trips',    label: t('my_trips'),         icon: '🚛' },
+    { to: '/driver/calendar', label: t('nav_calendar'),     icon: '🗓️' },
     { to: '/driver/incident',label: t('incidents'),        icon: '🚨' },
     { to: '/driver/events',   label: t('upcoming_events'),  icon: '📅' },
     { to: '/driver/messages', label: t('messages'),         icon: '💬', badge: unreadCount },
@@ -115,6 +116,14 @@ export default function DriverLayout() {
             <div style={{ fontSize: '.7rem', color: 'rgba(255,255,255,.5)' }}>Driver</div>
           </div>
         </div>
+        <Link to="/driver/support" onClick={() => setMenuOpen(false)} style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.4rem',
+          padding: '.5rem', marginBottom: '.6rem', borderRadius: 8,
+          background: 'rgba(255,255,255,.08)', color: 'rgba(255,255,255,.8)',
+          textDecoration: 'none', fontSize: '.8rem', fontWeight: 600
+        }}>
+          🎫 {t('support')}
+        </Link>
         <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center' }}>
           <select
             value={i18n.language}

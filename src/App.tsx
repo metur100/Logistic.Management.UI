@@ -13,6 +13,9 @@ import VehiclesPage from './pages/management/VehiclesPage'
 import UsersPage from './pages/management/UsersPage'
 import MessagesPage from './pages/management/MessagesPage'
 import IncidentsPage from './pages/management/IncidentsPage'
+import TransportCalendar from './pages/management/TransportCalendar'
+import SupportTickets from './pages/management/SupportTickets'
+import SupportPage from './pages/management/SupportPage'
 
 // Driver
 import DriverLayout from './pages/driver/DriverLayout'
@@ -22,6 +25,8 @@ import DriverTripDetail from './pages/driver/DriverTripDetail'
 import DriverEvents from './pages/driver/DriverEvents'
 import DriverMessages from './pages/driver/DriverMessages'
 import DriverIncidentReport from './pages/driver/DriverIncidentReport'
+import DriverCalendar from './pages/driver/DriverCalendar'
+import DriverSupport from './pages/driver/DriverSupport'
 
 // Auth
 import LoginPage from './pages/LoginPage'
@@ -100,8 +105,11 @@ export default function App() {
             <Route path="cargo"           element={<CargoPage />} />
             <Route path="vehicles"        element={<VehiclesPage />} />
             <Route path="users"           element={<UsersPage />} />
-            <Route path="messages"        element={<MessagesPage />} />  
-            <Route path="incidents"       element={<IncidentsPage />} />  
+            <Route path="messages"        element={<MessagesPage />} />
+            <Route path="incidents"       element={<IncidentsPage />} />
+            <Route path="calendar"        element={<TransportCalendar />} />
+            <Route path="tickets"         element={<SupportTickets />} />
+            <Route path="support"         element={<SupportPage />} />
           </Route>
 
           {/* ── Driver ─────────────────────────────────────── */}
@@ -119,6 +127,8 @@ export default function App() {
             <Route path="events"                      element={<DriverEvents />} />           {/* ← NEW */}
             <Route path="messages"                    element={<DriverMessages />} />         {/* ← NEW */}
             <Route path="incident"                    element={<DriverIncidentReport />} />   {/* ← NEW (no tripId) */}
+            <Route path="calendar"                    element={<DriverCalendar />} />
+            <Route path="support"                     element={<DriverSupport />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

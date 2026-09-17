@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
+import { Navigation } from 'lucide-react'
 import {
   TripDetail, getTripById, updateTripStatus,
   submitPod, TripStatus, SubmitPodPayload
@@ -180,6 +181,23 @@ export default function DriverTripDetail() {
     } catch (err: any) {
       toast.error(err.response?.data?.message || t('error_submitting_pod'))
     } finally { setSubmittingPod(false) }
+  }
+
+  const handleStartRoute = () => {
+    if (!trip) return
+    const destination = encodeURIComponent(trip.destinationLocation)
+    const buildUrl = (origin?: string) =>
+      `https://www.google.com/maps/dir/?api=1${origin ? `&origin=${origin}` : ''}&destination=${destination}&travelmode=driving`
+
+    if (!navigator.geolocation) {
+      window.open(buildUrl(), '_blank', 'noopener,noreferrer')
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      pos => window.open(buildUrl(`${pos.coords.latitude},${pos.coords.longitude}`), '_blank', 'noopener,noreferrer'),
+      () => window.open(buildUrl(), '_blank', 'noopener,noreferrer'),
+      { timeout: 5000 }
+    )
   }
 
   const handleSaveCmr = async () => {
@@ -558,6 +576,19 @@ export default function DriverTripDetail() {
           {v?.registrationNumber && <span>🚛 {v.registrationNumber}</span>}
           {trip.tripNumber && <span>📄 {trip.tripNumber}</span>}
         </div>
+        {!isDone && trip.destinationLocation && (
+          <button
+            onClick={handleStartRoute}
+            style={{
+              marginTop: '1rem', width: '100%', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', gap: '.5rem', padding: '.75rem',
+              background: 'rgba(255,255,255,.18)', border: '1px solid rgba(255,255,255,.4)',
+              borderRadius: 'var(--radius)', color: '#fff', fontWeight: 800, fontSize: '.9rem',
+              cursor: 'pointer', backdropFilter: 'blur(2px)'
+            }}>
+            <Navigation size={18} /> {t('start_route')}
+          </button>
+        )}
       </div>
 
       {/* Step bar */}
