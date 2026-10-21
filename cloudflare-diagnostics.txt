@@ -1,0 +1,24 @@
+token_chars=0
+account_chars=0
+--- whoami ---
+npm warn deprecated rollup-plugin-inject@3.0.2: This package has been deprecated and is no longer maintained. Please use @rollup/plugin-inject.
+npm warn deprecated sourcemap-codec@1.4.8: Please use @jridgewell/sourcemap-codec instead
+
+ ⛅️ wrangler 3.114.17 (update available 4.151.3)
+------------------------------------------------
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mThe version of Wrangler you are using is now out-of-date.[0m
+
+  Please update to the latest version to prevent critical errors.
+  Run `npm install --save-dev wrangler@4` to update to the latest version.
+  After installation, run Wrangler with `npx wrangler`.
+
+
+Getting User settings...
+You are not authenticated. Please run `wrangler login`.
+--- projects ---
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mNot logged in.[0m
+
+
+🪵  Logs were written to "/home/runner/.config/.wrangler/logs/wrangler-2026-10-21_20-21-59_329.log"
