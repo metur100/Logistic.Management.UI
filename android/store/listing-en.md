@@ -35,6 +35,8 @@ Each company has its own workspace. Managers only see their company's fleet, car
 • SUPPORT
 Companies and drivers can raise support tickets and follow the resolution.
 
+Available in English and Bosnian.
+
 LogistiTrack is a business tool. No advertising. No in-app purchases. Internet connection required.
 
 Privacy policy: https://logistic-management-ui.pages.dev/privacy
