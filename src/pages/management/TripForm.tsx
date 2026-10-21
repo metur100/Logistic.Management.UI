@@ -1,684 +1,338 @@
-import { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+﻿import { useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import api from '../../api/axios'
 import toast from 'react-hot-toast'
-
-interface Driver  { id: number; fullName: string; phone?: string; licenseNumber?: string }
-interface Vehicle { id: number; registrationNumber: string; fleetName?: string; type?: string }
-interface Cargo   { id: number; description: string; weightTons?: number; cargoType?: string; tripId?: number | null }
-
-type PanelMode = 'none' | 'driver' | 'vehicle' | 'cargo'
+import {
+  ArrowLeft, ArrowRight, Calculator, Check, ExternalLink, Loader2, MapPin,
+  Package, Plus, Route as RouteIcon, Save, Truck, User,
+} from 'lucide-react'
+import api, { apiError } from '../../api/axios'
+import type { Cargo, Driver, RouteDistance, Trip, Vehicle } from '../../lib/types'
+import { formatDistance, formatNumber, formatTons, fromDateTimeInput, mapsUrl, toDateTimeInput } from '../../lib/format'
+import { Card, Field, PageHeader, PageLoader } from '../../components/ui'
 
 export default function TripForm() {
-  const { t } = useTranslation()
-  const { id } = useParams<{ id: string }>()
+  const { id } = useParams()
+  const editing = Boolean(id)
   const nav = useNavigate()
-  const isEdit = Boolean(id)
+  const { t } = useTranslation()
 
-  const [drivers,  setDrivers]  = useState<Driver[]>([])
+  const [drivers, setDrivers] = useState<Driver[]>([])
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
-  const [cargoes,  setCargoes]  = useState<Cargo[]>([])
-  const [loading,  setLoading]  = useState(true)
-  const [saving,   setSaving]   = useState(false)
-  const [panel,    setPanel]    = useState<PanelMode>('none')
+  const [cargo, setCargo] = useState<Cargo[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [measuring, setMeasuring] = useState(false)
+  const [routeInfo, setRouteInfo] = useState<RouteDistance | null>(null)
 
   const [form, setForm] = useState({
-    driverId:             '',
-    vehicleId:            '',
-    originLocation:       '',
-    destinationLocation:  '',
-    distanceKm:           '',
-    plannedDepartureDate: '',
-    expectedArrivalDate:  '',
-    remarks:              '',
-    cargoIds:             [] as number[],
+    driverId: '',
+    vehicleId: '',
+    origin: '',
+    destination: '',
+    distance: '',
+    duration: '',
+    planned: '',
+    expected: '',
+    remarks: '',
   })
-
-  const [newDriver, setNewDriver] = useState({
-    fullName: '', username: '', password: '', phone: '', licenseNumber: ''
-  })
-  const [newVehicle, setNewVehicle] = useState({
-    registrationNumber: '', fleetName: '', type: '',
-    capacity: '', ownershipType: '', ownerName: '', ownerPhone: ''
-  })
-  const [newCargo, setNewCargo] = useState({
-    description: '', consignor: '', consignee: '',
-    weightTons: '', cargoType: '', specialInstructions: ''
-  })
-  const [creating, setCreating] = useState(false)
-
-  const loadAll = () =>
-    Promise.all([
-      api.get('/users?role=Driver'),
-      api.get('/vehicles'),
-      api.get('/cargo'),
-    ]).then(([d, v, c]) => {
-      setDrivers(Array.isArray(d.data) ? d.data : [])
-      setVehicles(Array.isArray(v.data) ? v.data : [])
-      setCargoes(Array.isArray(c.data) ? c.data : [])
-    }).catch(() => toast.error(t('error_loading_data')))
+  const [selected, setSelected] = useState<number[]>([])
 
   useEffect(() => {
-    setLoading(true)
-    loadAll().finally(() => setLoading(false))
-  }, [])
-
-  useEffect(() => {
-    if (!isEdit) return
-    api.get(`/trips/${id}`).then(r => {
-      const tr = r.data
-      setForm({
-        driverId:             tr.driverId?.toString() ?? '',
-        vehicleId:            tr.vehicleId?.toString() ?? '',
-        originLocation:       tr.originLocation ?? '',
-        destinationLocation:  tr.destinationLocation ?? '',
-        distanceKm:           tr.distanceKm?.toString() ?? '',
-        plannedDepartureDate: tr.plannedDepartureDate
-          ? new Date(tr.plannedDepartureDate).toISOString().slice(0, 16) : '',
-        expectedArrivalDate: tr.expectedArrivalDate
-          ? new Date(tr.expectedArrivalDate).toISOString().slice(0, 16) : '',
-        remarks:  tr.remarks ?? '',
-        cargoIds: (tr.cargoItems ?? []).map((c: Cargo) => c.id),
-      })
-    }).catch(() => toast.error(t('failed_load_trip')))
-  }, [id])
-
-  // ── Inline create handlers ───────────────────────────────────────
-  const createDriver = async () => {
-    if (!newDriver.fullName || !newDriver.username || !newDriver.password) {
-      toast.error(t('required')); return
+    let active = true
+    const calls: Promise<unknown>[] = [
+      api.get<Driver[]>('/company/drivers').then(r => { if (active) setDrivers(r.data) }),
+      api.get<Vehicle[]>('/vehicles').then(r => { if (active) setVehicles(r.data) }),
+      api.get<Cargo[]>('/cargo').then(r => { if (active) setCargo(r.data) }),
+    ]
+    if (editing) {
+      calls.push(api.get<Trip>(`/trips/${id}`).then(r => {
+        if (!active) return
+        const trip = r.data
+        setForm({
+          driverId: trip.driverId ? String(trip.driverId) : '',
+          vehicleId: trip.vehicleId ? String(trip.vehicleId) : '',
+          origin: trip.originLocation,
+          destination: trip.destinationLocation,
+          distance: trip.distanceKm ? String(trip.distanceKm) : '',
+          duration: trip.estimatedDurationMinutes ? String(trip.estimatedDurationMinutes) : '',
+          planned: toDateTimeInput(trip.plannedDepartureDate),
+          expected: toDateTimeInput(trip.expectedArrivalDate),
+          remarks: trip.remarks ?? '',
+        })
+        setSelected(trip.cargoItems.map(c => c.id))
+      }))
     }
-    setCreating(true)
-    try {
-      const r = await api.post('/users', { ...newDriver, role: 'Driver' })
-      const created: Driver = r.data
-      setDrivers(prev => [...prev, created])
-      setForm(f => ({ ...f, driverId: created.id.toString() }))
-      setNewDriver({ fullName: '', username: '', password: '', phone: '', licenseNumber: '' })
-      setPanel('none')
-      toast.success(t('saved'))
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || t('error'))
-    } finally { setCreating(false) }
-  }
+    Promise.all(calls)
+      .catch(err => { if (active) setError(apiError(err)) })
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [editing, id])
 
-  const createVehicle = async () => {
-    if (!newVehicle.registrationNumber) { toast.error(t('required')); return }
-    setCreating(true)
-    try {
-      const r = await api.post('/vehicles', {
-        ...newVehicle,
-        capacity: newVehicle.capacity ? Number(newVehicle.capacity) : null
-      })
-      const created: Vehicle = r.data
-      setVehicles(prev => [...prev, created])
-      setForm(f => ({ ...f, vehicleId: created.id.toString() }))
-      setNewVehicle({ registrationNumber: '', fleetName: '', type: '', capacity: '', ownershipType: '', ownerName: '', ownerPhone: '' })
-      setPanel('none')
-      toast.success(t('saved'))
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || t('error'))
-    } finally { setCreating(false) }
-  }
+  const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+    setForm(prev => ({ ...prev, [key]: e.target.value }))
 
-  const createCargo = async () => {
-    if (!newCargo.description) { toast.error(t('required')); return }
-    setCreating(true)
-    try {
-      const r = await api.post('/cargo', {
-        ...newCargo,
-        weightTons: newCargo.weightTons ? Number(newCargo.weightTons) : null
-      })
-      const created: Cargo = r.data
-      setCargoes(prev => [...prev, created])
-      setForm(f => ({ ...f, cargoIds: [...f.cargoIds, created.id] }))
-      setNewCargo({ description: '', consignor: '', consignee: '', weightTons: '', cargoType: '', specialInstructions: '' })
-      setPanel('none')
-      toast.success(t('saved'))
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || t('error'))
-    } finally { setCreating(false) }
-  }
+  const activeDrivers = useMemo(() => drivers.filter(d => d.status === 'Active' || d.id === Number(form.driverId)), [drivers, form.driverId])
+  const activeVehicles = useMemo(() => vehicles.filter(v => v.isActive || v.id === Number(form.vehicleId)), [vehicles, form.vehicleId])
 
-  const removeCargo = (cargoId: number) =>
-    setForm(f => ({ ...f, cargoIds: f.cargoIds.filter(x => x !== cargoId) }))
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (form.cargoIds.length === 0) { toast.error(t('cargo_required_for_trip')); return }
-    setSaving(true)
-    const payload = {
-      driverId:            form.driverId  ? Number(form.driverId)  : null,
-      vehicleId:           form.vehicleId ? Number(form.vehicleId) : null,
-      originLocation:      form.originLocation,
-      destinationLocation: form.destinationLocation,
-      distanceKm:          form.distanceKm ? Number(form.distanceKm) : null,
-      plannedDepartureDate: form.plannedDepartureDate || null,
-      expectedArrivalDate:  form.expectedArrivalDate  || null,
-      remarks:             form.remarks || null,
-      cargoIds:            form.cargoIds,
-    }
-    try {
-      if (isEdit) { await api.put(`/trips/${id}`, payload); toast.success(t('trip_updated')) }
-      else        { await api.post('/trips', payload);       toast.success(t('trip_created')) }
-      nav('/management/trips')
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || t('error_saving_trip'))
-    } finally { setSaving(false) }
-  }
-
-  // Cargo available in dropdown = unassigned OR already selected on this trip
-  const dropdownCargoes = cargoes.filter(c =>
-    !c.tripId || form.cargoIds.includes(c.id)
+  const availableCargo = useMemo(
+    () => cargo.filter(c => !c.tripId || selected.includes(c.id) || (editing && String(c.tripId) === id)),
+    [cargo, selected, editing, id],
   )
-  // Unselected ones for the dropdown
-  const selectableCargoes = dropdownCargoes.filter(c => !form.cargoIds.includes(c.id))
-  // Currently selected cargo objects
-  const selectedCargoes = cargoes.filter(c => form.cargoIds.includes(c.id))
 
-  const selectedDriver  = drivers.find(d => d.id.toString() === form.driverId)
-  const selectedVehicle = vehicles.find(v => v.id.toString() === form.vehicleId)
-  const selectedWeight  = selectedCargoes.reduce((s, c) => s + (c.weightTons || 0), 0)
+  const selectedCargo = useMemo(() => cargo.filter(c => selected.includes(c.id)), [cargo, selected])
+  const totalWeight = selectedCargo.reduce((sum, c) => sum + (c.weightTons ?? 0), 0)
+  const vehicle = vehicles.find(v => String(v.id) === form.vehicleId)
+  const overCapacity = vehicle?.capacity ? totalWeight > vehicle.capacity : false
+  const driver = drivers.find(d => String(d.id) === form.driverId)
 
-  if (loading) return <div className="loading-spinner"><div className="spinner" /></div>
+  const toggleCargo = (cargoId: number) => {
+    setSelected(prev => prev.includes(cargoId) ? prev.filter(x => x !== cargoId) : [...prev, cargoId])
+  }
 
-  const cardStyle: React.CSSProperties = {
-    background: 'var(--surface)', border: '1px solid var(--border)',
-    borderRadius: 'var(--radius)', padding: '1rem',
-    marginBottom: '1rem', boxShadow: 'var(--shadow-sm)'
+  const measureRoute = async (silent = false) => {
+    const origin = form.origin.trim()
+    const destination = form.destination.trim()
+    if (origin.length < 2 || destination.length < 2) return
+    setMeasuring(true)
+    try {
+      const { data } = await api.get<RouteDistance>('/routing/distance', { params: { origin, destination } })
+      setRouteInfo(data)
+      setForm(prev => {
+        const next = { ...prev, distance: String(data.distanceKm), duration: String(data.durationMinutes) }
+        if (prev.planned && !prev.expected) {
+          const planned = new Date(prev.planned)
+          if (!Number.isNaN(planned.getTime())) {
+            next.expected = toDateTimeInput(new Date(planned.getTime() + data.durationMinutes * 60000).toISOString())
+          }
+        }
+        return next
+      })
+      if (!silent) toast.success(t('trip.route_measured', { km: data.distanceKm }))
+    } catch (err) {
+      if (!silent) toast.error(apiError(err, t('trip.route_failed')))
+    } finally {
+      setMeasuring(false)
+    }
   }
-  const labelStyle: React.CSSProperties = {
-    fontSize: '.8rem', fontWeight: 700, display: 'block', marginBottom: '.35rem'
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!form.origin.trim() || !form.destination.trim()) { setError(t('trip.route_required')); return }
+    if (selected.length === 0) { setError(t('trip.cargo_required')); return }
+    setSaving(true)
+    setError('')
+    try {
+      const payload = {
+        driverId: form.driverId ? Number(form.driverId) : null,
+        vehicleId: form.vehicleId ? Number(form.vehicleId) : null,
+        originLocation: form.origin.trim(),
+        destinationLocation: form.destination.trim(),
+        distanceKm: form.distance ? Number(form.distance) : null,
+        estimatedDurationMinutes: form.duration ? Number(form.duration) : null,
+        plannedDepartureDate: fromDateTimeInput(form.planned),
+        expectedArrivalDate: fromDateTimeInput(form.expected),
+        remarks: form.remarks.trim() || null,
+        cargoIds: selected,
+      }
+      if (editing) {
+        await api.put(`/trips/${id}`, payload)
+        toast.success(t('trip.updated'))
+        nav(`/management/trips/${id}`)
+      } else {
+        const { data } = await api.post<Trip>('/trips', payload)
+        toast.success(t('trip.created'))
+        nav(`/management/trips/${data.id}`)
+      }
+    } catch (err) {
+      setError(apiError(err, t('trip.save_failed')))
+    } finally {
+      setSaving(false)
+    }
   }
-  const panelStyle: React.CSSProperties = {
-    background: 'var(--surface2)', border: '1px solid var(--border)',
-    borderRadius: 'var(--radius-sm)', padding: '1rem', marginTop: '.75rem'
-  }
-  const dividerStyle: React.CSSProperties = {
-    borderTop: '1px solid var(--border)', margin: '1rem 0'
-  }
+
+  if (loading) return <PageLoader />
 
   return (
-    <div style={{ width: '100%', maxWidth: '100%', overflowX: 'hidden', boxSizing: 'border-box' }}>
-      <style>{`
-        .tf-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
-        @media (max-width: 600px) { .tf-grid-2 { grid-template-columns: 1fr; } }
-        .create-btn {
-          display: flex; align-items: center; gap: .4rem;
-          padding: .32rem .7rem; border-radius: 999px;
-          border: 1.5px dashed var(--border);
-          background: none; cursor: pointer;
-          font-size: .78rem; font-weight: 600;
-          color: var(--primary); transition: all .15s; white-space: nowrap;
-        }
-        .create-btn:hover, .create-btn.active {
-          border-color: var(--primary); background: var(--primary-light);
-        }
-        .selected-badge {
-          display: flex; align-items: center; gap: .5rem;
-          padding: .45rem .75rem;
-          background: #eff6ff; border: 1px solid #bfdbfe;
-          border-radius: var(--radius-sm);
-          font-size: .82rem; font-weight: 600; color: #1d4ed8;
-          margin-bottom: .5rem;
-        }
-        .cargo-tag {
-          display: flex; align-items: center; gap: .4rem;
-          padding: .3rem .65rem;
-          background: #eff6ff; border: 1px solid #bfdbfe;
-          border-radius: 999px; font-size: .78rem; font-weight: 600;
-          color: #1d4ed8;
-        }
-        .cargo-tag button {
-          background: none; border: none; cursor: pointer;
-          color: #93c5fd; font-size: .85rem; line-height: 1;
-          padding: 0; display: flex; align-items: center;
-        }
-        .cargo-tag button:hover { color: #dc2626; }
-      `}</style>
+    <div className="page narrow">
+      <PageHeader
+        back={{ to: editing ? `/management/trips/${id}` : '/management/trips', label: t('trip.back_to_trips') }}
+        eyebrow={editing ? t('trip.edit_eyebrow') : t('trip.new_eyebrow')}
+        title={editing ? t('trip.edit_title') : t('trip.new_title')}
+        description={t('trip.form_sub')}
+      />
 
-      {/* Back */}
-      <button onClick={() => nav('/management/trips')} style={{
-        background: 'none', border: 'none', cursor: 'pointer',
-        color: 'var(--primary)', marginBottom: '1rem', padding: 0,
-        fontSize: '.875rem', fontWeight: 600,
-        display: 'flex', alignItems: 'center', gap: '.35rem'
-      }}>
-        ← {t('trips')}
-      </button>
+      {error && <div className="alert error mb-3">{error}</div>}
 
-      {/* Header */}
-      <div style={{
-        background: 'linear-gradient(135deg, #1d4ed8, #6d28d9)',
-        borderRadius: 'var(--radius-lg)', padding: '1.25rem 1.5rem',
-        color: '#fff', marginBottom: '1.25rem',
-        boxShadow: '0 6px 20px rgba(29,78,216,.25)'
-      }}>
-        <h1 style={{ fontSize: '1.3rem', fontWeight: 800 }}>
-          🚛 {isEdit ? t('edit_trip') : t('create_new_trip')}
-        </h1>
-      </div>
-
-      <form onSubmit={handleSubmit}>
-
-        {/* ── Route ── */}
-        <div style={cardStyle}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', marginBottom: '.85rem' }}>
-            <span>📍</span>
-            <h2 style={{ fontWeight: 700, fontSize: '.95rem' }}>{t('route')}</h2>
-          </div>
-          <div className="tf-grid-2">
-            <div>
-              <label style={labelStyle}>{t('origin')}</label>
-              <input className="form-control" required
-                value={form.originLocation}
-                onChange={e => setForm({ ...form, originLocation: e.target.value })}
-                placeholder="e.g. Sarajevo" />
-            </div>
-            <div>
-              <label style={labelStyle}>{t('destination')}</label>
-              <input className="form-control" required
-                value={form.destinationLocation}
-                onChange={e => setForm({ ...form, destinationLocation: e.target.value })}
-                placeholder="e.g. Mostar" />
-            </div>
-            <div>
-              <label style={labelStyle}>{t('distance_km')}</label>
-              <input className="form-control" type="number" min="0"
-                value={form.distanceKm}
-                onChange={e => setForm({ ...form, distanceKm: e.target.value })}
-                placeholder="km" />
-            </div>
-          </div>
-        </div>
-
-        {/* ── Assignment ── */}
-        <div style={cardStyle}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', marginBottom: '.85rem' }}>
-            <span>👤</span>
-            <h2 style={{ fontWeight: 700, fontSize: '.95rem' }}>{t('assignment')}</h2>
-          </div>
-
-          {/* ── DRIVER ── */}
-          <div style={{ marginBottom: '0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '.45rem' }}>
-              <label style={{ ...labelStyle, marginBottom: 0 }}>{t('driver')}</label>
-              <button type="button"
-                className={`create-btn${panel === 'driver' ? ' active' : ''}`}
-                onClick={() => setPanel(p => p === 'driver' ? 'none' : 'driver')}>
-                {panel === 'driver' ? `✕ ${t('cancel')}` : `+ ${t('new_user')}`}
-              </button>
-            </div>
-
-            {selectedDriver && (
-              <div className="selected-badge">
-                <span style={{
-                  width: 26, height: 26, borderRadius: '50%',
-                  background: 'linear-gradient(135deg,#60a5fa,#a78bfa)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', fontWeight: 800, fontSize: '.75rem', flexShrink: 0
-                }}>
-                  {selectedDriver.fullName[0].toUpperCase()}
-                </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: '.82rem' }}>{selectedDriver.fullName}</div>
-                  {selectedDriver.phone && (
-                    <div style={{ fontSize: '.7rem', opacity: .7 }}>{selectedDriver.phone}</div>
-                  )}
-                </div>
+      <form onSubmit={submit}>
+        <div className="grid grid-2">
+          <div className="stack" style={{ gap: 16 }}>
+            <Card title={t('trip.route')} subtitle={t('trip.route_sub')}>
+              <div className="form-grid">
+                <Field label={t('trip.origin')} required>
+                  <div className="input-wrap">
+                    <MapPin />
+                    <input className="input" value={form.origin} onChange={set('origin')} placeholder="Sarajevo, Bosnia and Herzegovina" required />
+                  </div>
+                </Field>
+                <Field label={t('trip.destination')} required>
+                  <div className="input-wrap">
+                    <MapPin />
+                    <input
+                      className="input"
+                      value={form.destination}
+                      onChange={set('destination')}
+                      onBlur={() => { if (!form.distance) measureRoute(true) }}
+                      placeholder="Mostar, Bosnia and Herzegovina"
+                      required
+                    />
+                  </div>
+                </Field>
               </div>
-            )}
 
-            <select className="form-control"
-              value={form.driverId}
-              onChange={e => setForm({ ...form, driverId: e.target.value })}>
-              <option value="">{t('select_driver')}</option>
-              {drivers.map(d => (
-                <option key={d.id} value={d.id}>{d.fullName}</option>
-              ))}
-            </select>
-
-            {panel === 'driver' && (
-              <div style={panelStyle}>
-                <div style={{ fontWeight: 700, fontSize: '.85rem', marginBottom: '.75rem', color: 'var(--primary)' }}>
-                  ➕ {t('new_user')}
-                </div>
-                <div className="tf-grid-2">
-                  <div>
-                    <label style={labelStyle}>{t('full_name_required')}</label>
-                    <input className="form-control"
-                      value={newDriver.fullName}
-                      onChange={e => setNewDriver({ ...newDriver, fullName: e.target.value })}
-                      placeholder="Full name" />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>{t('username_required')}</label>
-                    <input className="form-control"
-                      value={newDriver.username}
-                      onChange={e => setNewDriver({ ...newDriver, username: e.target.value })}
-                      placeholder="username" />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>{t('password_required')}</label>
-                    <input className="form-control" type="password"
-                      value={newDriver.password}
-                      onChange={e => setNewDriver({ ...newDriver, password: e.target.value })}
-                      placeholder="••••••" />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>{t('phone')}</label>
-                    <input className="form-control"
-                      value={newDriver.phone}
-                      onChange={e => setNewDriver({ ...newDriver, phone: e.target.value })}
-                      placeholder="+387..." />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>{t('license_no')}</label>
-                    <input className="form-control"
-                      value={newDriver.licenseNumber}
-                      onChange={e => setNewDriver({ ...newDriver, licenseNumber: e.target.value })}
-                      placeholder="License no." />
-                  </div>
-                </div>
-                <button type="button" className="btn btn-primary"
-                  disabled={creating} onClick={createDriver}
-                  style={{ marginTop: '.75rem', width: '100%' }}>
-                  {creating ? t('saving') : `✅ ${t('create')} ${t('driver')}`}
+              <div className="row wrap" style={{ marginBottom: 14 }}>
+                <button type="button" className="btn btn-outline btn-sm" onClick={() => measureRoute(false)} disabled={measuring || form.origin.length < 2 || form.destination.length < 2}>
+                  {measuring ? <Loader2 size={14} style={{ animation: 'spin .7s linear infinite' }} /> : <Calculator size={14} />}
+                  {measuring ? t('trip.measuring') : t('trip.measure')}
                 </button>
-              </div>
-            )}
-          </div>
-
-          <div style={dividerStyle} />
-
-          {/* ── VEHICLE ── */}
-          <div style={{ marginBottom: '0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '.45rem' }}>
-              <label style={{ ...labelStyle, marginBottom: 0 }}>{t('vehicle')}</label>
-              <button type="button"
-                className={`create-btn${panel === 'vehicle' ? ' active' : ''}`}
-                onClick={() => setPanel(p => p === 'vehicle' ? 'none' : 'vehicle')}>
-                {panel === 'vehicle' ? `✕ ${t('cancel')}` : `+ ${t('new_vehicle')}`}
-              </button>
-            </div>
-
-            {selectedVehicle && (
-              <div className="selected-badge">
-                <span style={{ fontSize: '1.1rem' }}>🚛</span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: '.82rem' }}>{selectedVehicle.registrationNumber}</div>
-                  {selectedVehicle.fleetName && (
-                    <div style={{ fontSize: '.7rem', opacity: .7 }}>{selectedVehicle.fleetName}</div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <select className="form-control"
-              value={form.vehicleId}
-              onChange={e => setForm({ ...form, vehicleId: e.target.value })}>
-              <option value="">{t('select_vehicle')}</option>
-              {vehicles.map(v => (
-                <option key={v.id} value={v.id}>{v.registrationNumber}</option>
-              ))}
-            </select>
-
-            {panel === 'vehicle' && (
-              <div style={panelStyle}>
-                <div style={{ fontWeight: 700, fontSize: '.85rem', marginBottom: '.75rem', color: 'var(--primary)' }}>
-                  ➕ {t('new_vehicle')}
-                </div>
-                <div className="tf-grid-2">
-                  <div>
-                    <label style={labelStyle}>{t('registration_no_required')}</label>
-                    <input className="form-control"
-                      value={newVehicle.registrationNumber}
-                      onChange={e => setNewVehicle({ ...newVehicle, registrationNumber: e.target.value })}
-                      placeholder="e.g. A12-345" />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>{t('fleet_name_label')}</label>
-                    <input className="form-control"
-                      value={newVehicle.fleetName}
-                      onChange={e => setNewVehicle({ ...newVehicle, fleetName: e.target.value })}
-                      placeholder="Fleet name" />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>{t('vehicle_type')}</label>
-                    <input className="form-control"
-                      value={newVehicle.type}
-                      onChange={e => setNewVehicle({ ...newVehicle, type: e.target.value })}
-                      placeholder="Truck, Van..." />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>{t('capacity_tons')}</label>
-                    <input className="form-control" type="number" min="0"
-                      value={newVehicle.capacity}
-                      onChange={e => setNewVehicle({ ...newVehicle, capacity: e.target.value })}
-                      placeholder="tons" />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>{t('ownership_label')}</label>
-                    <select className="form-control"
-                      value={newVehicle.ownershipType}
-                      onChange={e => setNewVehicle({ ...newVehicle, ownershipType: e.target.value })}>
-                      <option value="">—</option>
-                      <option value="Own">Own</option>
-                      <option value="Leased">Leased</option>
-                      <option value="Rented">Rented</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label style={labelStyle}>{t('owner_name')}</label>
-                    <input className="form-control"
-                      value={newVehicle.ownerName}
-                      onChange={e => setNewVehicle({ ...newVehicle, ownerName: e.target.value })}
-                      placeholder="Owner name" />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>{t('owner_phone')}</label>
-                    <input className="form-control"
-                      value={newVehicle.ownerPhone}
-                      onChange={e => setNewVehicle({ ...newVehicle, ownerPhone: e.target.value })}
-                      placeholder="+387..." />
-                  </div>
-                </div>
-                <button type="button" className="btn btn-primary"
-                  disabled={creating} onClick={createVehicle}
-                  style={{ marginTop: '.75rem', width: '100%' }}>
-                  {creating ? t('saving') : `✅ ${t('create')} ${t('vehicle')}`}
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div style={dividerStyle} />
-
-          {/* ── CARGO ── */}
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '.45rem', flexWrap: 'wrap', gap: '.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
-                <label style={{ ...labelStyle, marginBottom: 0 }}>📦 {t('assign_cargo')}</label>
-                <span style={{
-                  background: form.cargoIds.length === 0 ? '#fef2f2' : '#f0fdf4',
-                  color:      form.cargoIds.length === 0 ? '#dc2626' : '#16a34a',
-                  padding: '.1rem .45rem', borderRadius: 999,
-                  fontSize: '.65rem', fontWeight: 700
-                }}>
-                </span>
-                {selectedWeight > 0 && (
-                  <span style={{
-                    background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0',
-                    padding: '.1rem .45rem', borderRadius: 999, fontSize: '.65rem', fontWeight: 700
-                  }}>
-                    ⚖️ {selectedWeight.toFixed(2)} t
-                  </span>
+                {form.origin && form.destination && (
+                  <a className="btn btn-ghost btn-sm" href={mapsUrl(form.origin, form.destination)} target="_blank" rel="noreferrer">
+                    <ExternalLink size={14} /> {t('trip.open_maps')}
+                  </a>
                 )}
+                {routeInfo?.source === 'estimate' && <span className="tiny faint">{t('trip.estimate_note')}</span>}
               </div>
-              <button type="button"
-                className={`create-btn${panel === 'cargo' ? ' active' : ''}`}
-                onClick={() => setPanel(p => p === 'cargo' ? 'none' : 'cargo')}>
-                {panel === 'cargo' ? `✕ ${t('cancel')}` : `+ ${t('new_cargo')}`}
-              </button>
-            </div>
 
-            {/* Selected cargo tags */}
-            {selectedCargoes.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.4rem', marginBottom: '.6rem' }}>
-                {selectedCargoes.map(c => (
-                  <div key={c.id} className="cargo-tag">
-                    <span>📦</span>
-                    <span>{c.description}</span>
-                    {c.weightTons != null && (
-                      <span style={{ opacity: .7, fontSize: '.7rem' }}>· {c.weightTons}t</span>
-                    )}
-                    <button type="button" onClick={() => removeCargo(c.id)}>✕</button>
+              <div className="form-grid three">
+                <Field label={t('trip.distance_km')} hint={routeInfo ? `${routeInfo.originLabel.split(',')[0]} → ${routeInfo.destinationLabel.split(',')[0]}` : undefined}>
+                  <input className="input" type="number" min="0" step="0.1" value={form.distance} onChange={set('distance')} placeholder="0" />
+                </Field>
+                <Field label={t('trip.duration_min')}>
+                  <input className="input" type="number" min="0" step="1" value={form.duration} onChange={set('duration')} placeholder="0" />
+                </Field>
+                <Field label={t('trip.route_source')}>
+                  <div className="input" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--surface-2)' }}>
+                    <RouteIcon size={14} className="muted" />
+                    <span className="small muted">{routeInfo ? (routeInfo.source === 'osrm' ? t('trip.real_route') : t('trip.estimated')) : t('trip.not_measured')}</span>
                   </div>
-                ))}
+                </Field>
               </div>
-            )}
 
-            {/* Cargo dropdown — only shows unselected ones */}
-            <select
-              className="form-control"
-              value=""
-              onChange={e => {
-                const val = Number(e.target.value)
-                if (val && !form.cargoIds.includes(val))
-                  setForm(f => ({ ...f, cargoIds: [...f.cargoIds, val] }))
-              }}>
-              <option value="">
-                {selectableCargoes.length === 0
-                  ? t('no_cargo')
-                  : `— ${t('assign_cargo')} —`}
-              </option>
-              {selectableCargoes.map(c => (
-                <option key={c.id} value={c.id}>
-                  {c.description}
-                  {c.weightTons != null ? ` · ${c.weightTons}t` : ''}
-                  {c.cargoType ? ` [${c.cargoType}]` : ''}
-                </option>
-              ))}
-            </select>
+              <div className="form-grid">
+                <Field label={t('trip.planned_departure')}>
+                  <input className="input" type="datetime-local" value={form.planned} onChange={set('planned')} />
+                </Field>
+                <Field label={t('trip.expected_arrival')} hint={t('trip.expected_hint')}>
+                  <input className="input" type="datetime-local" value={form.expected} onChange={set('expected')} />
+                </Field>
+              </div>
+            </Card>
 
-            {/* Inline create cargo */}
-            {panel === 'cargo' && (
-              <div style={panelStyle}>
-                <div style={{ fontWeight: 700, fontSize: '.85rem', marginBottom: '.75rem', color: 'var(--primary)' }}>
-                  ➕ {t('new_cargo')}
+            <Card title={t('trip.assignment')} subtitle={t('trip.assignment_sub')}>
+              <div className="form-grid">
+                <Field label={t('trip.driver')}>
+                  <select className="select" value={form.driverId} onChange={set('driverId')}>
+                    <option value="">{t('trip.no_driver')}</option>
+                    {activeDrivers.map(d => <option key={d.id} value={d.id}>{d.fullName} · @{d.username}</option>)}
+                  </select>
+                  {driver && <span className="hint">{driver.phone ?? driver.email ?? ''}</span>}
+                </Field>
+                <Field label={t('trip.vehicle')}>
+                  <select className="select" value={form.vehicleId} onChange={set('vehicleId')}>
+                    <option value="">{t('trip.no_vehicle')}</option>
+                    {activeVehicles.map(v => <option key={v.id} value={v.id}>{v.registrationNumber} · {v.type ?? t('common.vehicle')}{v.capacity ? ` · ${formatNumber(v.capacity, 0)} t` : ''}</option>)}
+                  </select>
+                  {vehicle?.capacity ? <span className="hint">{t('trip.capacity', { value: formatNumber(vehicle.capacity, 0) })}</span> : null}
+                </Field>
+              </div>
+              <div className="alert info mt-1">
+                <User size={15} />
+                <span>{t('trip.assignment_note')}</span>
+              </div>
+            </Card>
+
+            <Card title={t('trip.cargo')} subtitle={t('trip.cargo_sub')} actions={<Link to="/management/cargo" className="btn btn-ghost btn-sm"><Plus size={13} /> {t('trip.manage_cargo')}</Link>}>
+              {availableCargo.length === 0 ? (
+                <div className="empty" style={{ padding: '26px 12px' }}>
+                  <div className="ico"><Package /></div>
+                  <h3>{t('trip.no_cargo_available')}</h3>
+                  <p>{t('trip.no_cargo_available_text')}</p>
+                  <Link to="/management/cargo" className="btn btn-outline btn-sm"><Plus /> {t('trip.add_cargo')}</Link>
                 </div>
-                <div className="tf-grid-2">
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <label style={labelStyle}>{t('description_required')}</label>
-                    <input className="form-control"
-                      value={newCargo.description}
-                      onChange={e => setNewCargo({ ...newCargo, description: e.target.value })}
-                      placeholder="Cargo description" />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>{t('consignor')}</label>
-                    <input className="form-control"
-                      value={newCargo.consignor}
-                      onChange={e => setNewCargo({ ...newCargo, consignor: e.target.value })}
-                      placeholder="Sender" />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>{t('consignee')}</label>
-                    <input className="form-control"
-                      value={newCargo.consignee}
-                      onChange={e => setNewCargo({ ...newCargo, consignee: e.target.value })}
-                      placeholder="Receiver" />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>{t('weight_tons')}</label>
-                    <input className="form-control" type="number" min="0" step="0.01"
-                      value={newCargo.weightTons}
-                      onChange={e => setNewCargo({ ...newCargo, weightTons: e.target.value })}
-                      placeholder="tons" />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>{t('cargo_type')}</label>
-                    <input className="form-control"
-                      value={newCargo.cargoType}
-                      onChange={e => setNewCargo({ ...newCargo, cargoType: e.target.value })}
-                      placeholder="General, Fragile..." />
-                  </div>
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <label style={labelStyle}>{t('special_instructions')}</label>
-                    <textarea className="form-control" rows={2}
-                      value={newCargo.specialInstructions}
-                      onChange={e => setNewCargo({ ...newCargo, specialInstructions: e.target.value })}
-                      placeholder={t('special_instructions')} />
-                  </div>
+              ) : (
+                <div className="stack-sm">
+                  {availableCargo.map(item => {
+                    const checked = selected.includes(item.id)
+                    return (
+                      <button
+                        type="button"
+                        key={item.id}
+                        onClick={() => toggleCargo(item.id)}
+                        className="row"
+                        style={{
+                          width: '100%', textAlign: 'left', padding: '11px 12px', borderRadius: 9,
+                          border: `1px solid ${checked ? 'var(--accent-line)' : 'var(--line)'}`,
+                          background: checked ? 'var(--accent-soft)' : 'var(--surface)',
+                          gap: 11,
+                        }}
+                      >
+                        <span style={{
+                          width: 20, height: 20, borderRadius: 5, border: `1.5px solid ${checked ? 'var(--accent)' : 'var(--line-strong)'}`,
+                          background: checked ? 'var(--accent)' : 'var(--surface)', color: '#fff', display: 'grid', placeItems: 'center', flexShrink: 0,
+                        }}>
+                          {checked && <Check size={13} />}
+                        </span>
+                        <span className="grow">
+                          <span className="strong" style={{ fontSize: 12.5, display: 'block' }}>{item.description}</span>
+                          <span className="tiny muted">{item.consignor ? `${item.consignor} → ` : ''}{item.consignee ?? '—'} · {item.cargoType ?? 'General'}</span>
+                        </span>
+                        <span className="mono small nowrap">{formatTons(item.weightTons)}</span>
+                      </button>
+                    )
+                  })}
                 </div>
-                <button type="button" className="btn btn-primary"
-                  disabled={creating} onClick={createCargo}
-                  style={{ marginTop: '.75rem', width: '100%' }}>
-                  {creating ? t('saving') : `✅ ${t('create')} & ${t('assign_cargo')}`}
-                </button>
+              )}
+              <div className="row between mt-2 small">
+                <span className="muted">{selected.length} {t('common.items')} {t('common.selected')}</span>
+                <span className={overCapacity ? 'badge badge-red' : 'strong'}>{formatTons(totalWeight)}</span>
               </div>
-            )}
-          </div>
-        </div>
+              {overCapacity && <div className="alert warn mt-2">{t('trip.over_capacity', { value: formatNumber(vehicle?.capacity, 0) })}</div>}
+            </Card>
 
-        {/* ── Schedule ── */}
-        <div style={cardStyle}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', marginBottom: '.85rem' }}>
-            <span>📅</span>
-            <h2 style={{ fontWeight: 700, fontSize: '.95rem' }}>{t('planned_departure')}</h2>
+            <Card title={t('trip.notes')} subtitle={t('trip.notes_sub')}>
+              <textarea className="textarea" value={form.remarks} onChange={set('remarks')} placeholder={t('trip.notes_placeholder')} maxLength={2000} />
+            </Card>
           </div>
-          <div className="tf-grid-2">
-            <div>
-              <label style={labelStyle}>{t('planned_departure_label')}</label>
-              <input type="datetime-local" className="form-control"
-                value={form.plannedDepartureDate}
-                onChange={e => setForm({ ...form, plannedDepartureDate: e.target.value })} />
+
+          <div className="card pad" style={{ position: 'sticky', top: 18 }}>
+            <div className="eyebrow">{t('trip.summary')}</div>
+            <h2 style={{ marginTop: 6 }}>{editing ? t('trip.edit_title') : t('trip.new_title')}</h2>
+            <div className="divider" />
+            <div className="stack-sm small">
+              <div className="row between"><span className="muted">{t('trip.route')}</span><span className="strong text-right">{form.origin ? form.origin.split(',')[0] : '—'} → {form.destination ? form.destination.split(',')[0] : '—'}</span></div>
+              <div className="row between"><span className="muted">{t('trip.distance')}</span><span className="strong">{form.distance ? formatDistance(Number(form.distance)) : '—'}</span></div>
+              <div className="row between"><span className="muted">{t('trip.duration')}</span><span className="strong">{form.duration ? `${form.duration} min` : '—'}</span></div>
+              <div className="row between"><span className="muted">{t('trip.driver')}</span><span className="strong text-right">{driver?.fullName ?? '—'}</span></div>
+              <div className="row between"><span className="muted">{t('trip.vehicle')}</span><span className="strong">{vehicle?.registrationNumber ?? '—'}</span></div>
+              <div className="row between"><span className="muted">{t('trip.cargo')}</span><span className="strong">{selected.length} · {formatTons(totalWeight)}</span></div>
             </div>
-            <div>
-              <label style={labelStyle}>{t('expected_arrival')}</label>
-              <input type="datetime-local" className="form-control"
-                value={form.expectedArrivalDate}
-                onChange={e => setForm({ ...form, expectedArrivalDate: e.target.value })} />
+            <div className="divider" />
+            <button className="btn btn-primary btn-block btn-lg" disabled={saving}>
+              {saving ? <Loader2 size={17} style={{ animation: 'spin .7s linear infinite' }} /> : editing ? <Save size={17} /> : <ArrowRight size={17} />}
+              {saving ? t('common.saving') : editing ? t('trip.save_changes') : t('trip.create')}
+            </button>
+            <Link to={editing ? `/management/trips/${id}` : '/management/trips'} className="btn btn-ghost btn-block mt-1">
+              <ArrowLeft size={15} /> {t('common.cancel')}
+            </Link>
+            <div className="alert info mt-3">
+              <Truck size={15} />
+              <span>{t('trip.summary_note')}</span>
             </div>
           </div>
         </div>
-
-        {/* ── Remarks ── */}
-        <div style={cardStyle}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', marginBottom: '.65rem' }}>
-            <span>📝</span>
-            <h2 style={{ fontWeight: 700, fontSize: '.95rem' }}>{t('remarks')}</h2>
-          </div>
-          <textarea className="form-control" rows={3}
-            value={form.remarks}
-            onChange={e => setForm({ ...form, remarks: e.target.value })}
-            placeholder={t('add_note')} />
-        </div>
-
-        {/* ── Submit ── */}
-        <button
-          type="submit"
-          disabled={saving || form.cargoIds.length === 0}
-          style={{
-            width: '100%', padding: '.85rem',
-            fontSize: '1rem', fontWeight: 800,
-            borderRadius: 'var(--radius)', border: 'none',
-            background: form.cargoIds.length === 0
-              ? '#e2e8f0'
-              : 'linear-gradient(135deg, #1d4ed8, #6d28d9)',
-            color:  form.cargoIds.length === 0 ? '#94a3b8' : '#fff',
-            cursor: form.cargoIds.length === 0 ? 'not-allowed' : 'pointer',
-            boxShadow: form.cargoIds.length === 0 ? 'none' : '0 4px 14px rgba(29,78,216,.3)',
-            transition: 'all .2s'
-          }}>
-          {saving
-            ? t('saving')
-            : isEdit
-              ? `✅ ${t('update_trip')}`
-              : `🚛 ${t('create_trip')}`}
-        </button>
       </form>
     </div>
   )
 }
+

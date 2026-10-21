@@ -1,151 +1,128 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { PageLoader } from './components/ui'
 
-// Management
-import ManagementLayout from './pages/management/ManagementLayout'
+import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
+import AcceptInvitePage from './pages/AcceptInvitePage'
+
+import Shell from './components/Shell'
 import Dashboard from './pages/management/Dashboard'
 import Trips from './pages/management/Trips'
 import TripForm from './pages/management/TripForm'
 import TripDetail from './pages/management/TripDetail'
 import CargoPage from './pages/management/CargoPage'
 import VehiclesPage from './pages/management/VehiclesPage'
-import UsersPage from './pages/management/UsersPage'
+import DriversPage from './pages/management/DriversPage'
 import MessagesPage from './pages/management/MessagesPage'
 import IncidentsPage from './pages/management/IncidentsPage'
-import TransportCalendar from './pages/management/TransportCalendar'
-import SupportTickets from './pages/management/SupportTickets'
+import CalendarPage from './pages/management/CalendarPage'
 import SupportPage from './pages/management/SupportPage'
+import SettingsPage from './pages/management/SettingsPage'
 
-// Admin
-import AdminLayout from './pages/admin/AdminLayout'
 import AdminOverview from './pages/admin/AdminOverview'
+import CompaniesPage from './pages/admin/CompaniesPage'
+import CompanyDetailPage from './pages/admin/CompanyDetailPage'
+import AdminUsersPage from './pages/admin/AdminUsersPage'
+import AdminTicketsPage from './pages/admin/AdminTicketsPage'
+import AdminSettingsPage from './pages/admin/AdminSettingsPage'
 
-// Driver
-import DriverLayout from './pages/driver/DriverLayout'
 import DriverHome from './pages/driver/DriverHome'
 import DriverTrips from './pages/driver/DriverTrips'
 import DriverTripDetail from './pages/driver/DriverTripDetail'
-import DriverEvents from './pages/driver/DriverEvents'
-import DriverMessages from './pages/driver/DriverMessages'
-import DriverIncidentReport from './pages/driver/DriverIncidentReport'
 import DriverCalendar from './pages/driver/DriverCalendar'
+import DriverMessages from './pages/driver/DriverMessages'
+import DriverIncidents from './pages/driver/DriverIncidents'
 import DriverSupport from './pages/driver/DriverSupport'
 
-// Auth
-import LoginPage from './pages/LoginPage'
-
-interface PrivateRouteProps {
-  children: React.ReactNode
-  roles?: string[]
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  return null
 }
 
-function PrivateRoute({ children, roles }: PrivateRouteProps) {
+function PrivateRoute({ children, roles }: { children: React.ReactNode; roles: string[] }) {
   const { user, loading } = useAuth()
-
-  if (loading) return (
-    <div style={{
-      display: 'flex', justifyContent: 'center', alignItems: 'center',
-      height: '100vh', flexDirection: 'column', gap: '1rem',
-      background: 'var(--bg)'
-    }}>
-      <div style={{
-        width: 48, height: 48, borderRadius: '50%',
-        border: '3px solid #e2e8f0',
-        borderTopColor: '#2563eb',
-        animation: 'spin .7s linear infinite'
-      }} />
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
-  )
-
+  if (loading) return <div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', background: 'var(--paper)' }}><PageLoader /></div>
   if (!user) return <Navigate to="/login" replace />
-  if (roles && !roles.includes(user.role)) return <Navigate to="/" replace />
+  if (!roles.includes(user.role)) return <Navigate to="/" replace />
   return <>{children}</>
 }
 
 function RoleRedirect() {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
+  if (loading) return <PageLoader />
   if (!user) return <Navigate to="/login" replace />
-  if (user.role === 'Driver') return <Navigate to="/driver" replace />
   if (user.role === 'Admin') return <Navigate to="/admin" replace />
-  return <Navigate to="/management" replace />
+  if (user.role === 'Manager') return <Navigate to="/management" replace />
+  if (user.role === 'Driver') return <Navigate to="/driver" replace />
+  return <Navigate to="/login" replace />
 }
 
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <ScrollToTop />
         <Toaster
           position="top-right"
           toastOptions={{
-            duration: 3000,
-            style: {
-              borderRadius: '12px',
-              fontWeight: 600,
-              fontSize: '0.875rem',
-              boxShadow: '0 8px 24px rgba(0,0,0,0.12)'
-            }
+            duration: 3200,
+            className: 'toast-bar',
+            success: { iconTheme: { primary: '#5ee2b3', secondary: '#101922' } },
+            error: { iconTheme: { primary: '#ff8b80', secondary: '#101922' } },
           }}
         />
         <Routes>
-          {/* ── Public ─────────────────────────────────────── */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/accept-invite/:token" element={<AcceptInvitePage />} />
           <Route path="/" element={<RoleRedirect />} />
 
-          {/* ── Management ─────────────────────────────────── */}
           <Route
             path="/management"
-            element={
-              <PrivateRoute roles={['Admin', 'Manager']}>
-                <ManagementLayout />
-              </PrivateRoute>
-            }>
-            <Route index                  element={<Dashboard />} />
-            <Route path="trips"           element={<Trips />} />
-            <Route path="trips/new"       element={<TripForm />} />
-            <Route path="trips/:id"       element={<TripDetail />} />
-            <Route path="trips/:id/edit"  element={<TripForm />} />
-            <Route path="cargo"           element={<CargoPage />} />
-            <Route path="vehicles"        element={<VehiclesPage />} />
-            <Route path="users"           element={<UsersPage />} />
-            <Route path="messages"        element={<MessagesPage />} />
-            <Route path="incidents"       element={<IncidentsPage />} />
-            <Route path="calendar"        element={<TransportCalendar />} />
-            <Route path="tickets"         element={<SupportTickets />} />
-            <Route path="support"         element={<SupportPage />} />
+            element={<PrivateRoute roles={['Manager']}><Shell variant="management" /></PrivateRoute>}
+          >
+            <Route index element={<Dashboard />} />
+            <Route path="trips" element={<Trips />} />
+            <Route path="trips/new" element={<TripForm />} />
+            <Route path="trips/:id" element={<TripDetail />} />
+            <Route path="trips/:id/edit" element={<TripForm />} />
+            <Route path="calendar" element={<CalendarPage />} />
+            <Route path="cargo" element={<CargoPage />} />
+            <Route path="vehicles" element={<VehiclesPage />} />
+            <Route path="drivers" element={<DriversPage />} />
+            <Route path="messages" element={<MessagesPage />} />
+            <Route path="incidents" element={<IncidentsPage />} />
+            <Route path="support" element={<SupportPage />} />
+            <Route path="settings" element={<SettingsPage />} />
           </Route>
 
-          {/* ── Admin ──────────────────────────────────────── */}
           <Route
             path="/admin"
-            element={
-              <PrivateRoute roles={['Admin']}>
-                <AdminLayout />
-              </PrivateRoute>
-            }>
-            <Route index          element={<AdminOverview />} />
-            <Route path="users"   element={<UsersPage />} />
-            <Route path="tickets" element={<SupportTickets />} />
+            element={<PrivateRoute roles={['Admin']}><Shell variant="admin" /></PrivateRoute>}
+          >
+            <Route index element={<AdminOverview />} />
+            <Route path="companies" element={<CompaniesPage />} />
+            <Route path="companies/:id" element={<CompanyDetailPage />} />
+            <Route path="users" element={<AdminUsersPage />} />
+            <Route path="tickets" element={<AdminTicketsPage />} />
+            <Route path="settings" element={<AdminSettingsPage />} />
           </Route>
 
-          {/* ── Driver ─────────────────────────────────────── */}
           <Route
             path="/driver"
-            element={
-              <PrivateRoute roles={['Driver']}>
-                <DriverLayout />
-              </PrivateRoute>
-            }>
-            <Route index                              element={<DriverHome />} />
-            <Route path="trips"                       element={<DriverTrips />} />
-            <Route path="trips/:id"                   element={<DriverTripDetail />} />
-            <Route path="trips/:tripId/incident"      element={<DriverIncidentReport />} />  {/* ← NEW */}
-            <Route path="events"                      element={<DriverEvents />} />           {/* ← NEW */}
-            <Route path="messages"                    element={<DriverMessages />} />         {/* ← NEW */}
-            <Route path="incident"                    element={<DriverIncidentReport />} />   {/* ← NEW (no tripId) */}
-            <Route path="calendar"                    element={<DriverCalendar />} />
-            <Route path="support"                     element={<DriverSupport />} />
+            element={<PrivateRoute roles={['Driver']}><Shell variant="driver" /></PrivateRoute>}
+          >
+            <Route index element={<DriverHome />} />
+            <Route path="trips" element={<DriverTrips />} />
+            <Route path="trips/:id" element={<DriverTripDetail />} />
+            <Route path="calendar" element={<DriverCalendar />} />
+            <Route path="messages" element={<DriverMessages />} />
+            <Route path="incidents" element={<DriverIncidents />} />
+            <Route path="support" element={<DriverSupport />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

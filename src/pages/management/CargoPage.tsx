@@ -1,577 +1,273 @@
-import { useState, useEffect } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
-import api from '../../api/axios'
-
-interface CargoItem {
-  id: number
-  description: string
-  cargoType: string
-  weightTons: number | null
-  volumeCbm: number | null
-  consignor: string
-  consignee: string
-  specialInstructions: string
-  tripId: number | null
-}
-
-interface CargoFormState {
-  description: string
-  consignor: string
-  consignee: string
-  weightTons: string
-  volumeCbm: string
-  cargoType: string
-  specialInstructions: string
-}
-
-const CARGO_TYPE_LABELS: Record<string, string> = {
-  General: 'cargo_type_general',
-  Fragile: 'cargo_type_fragile',
-  Hazardous: 'cargo_type_hazardous',
-  Perishable: 'cargo_type_perishable',
-  Oversized: 'cargo_type_oversized',
-}
+import {
+  Boxes, Loader2, Package, PackageCheck, Pencil, Plus, Trash2, Weight,
+} from 'lucide-react'
+import api, { apiError } from '../../api/axios'
+import type { Cargo } from '../../lib/types'
+import { formatDate, formatNumber, formatTons } from '../../lib/format'
+import {
+  Badge, Card, ConfirmDialog, DataTable, EmptyState, Field, Modal, PageHeader,
+  PageLoader, SearchInput, Segmented, Stat, type Column,
+} from '../../components/ui'
 
 const TYPES = ['General', 'Fragile', 'Hazardous', 'Perishable', 'Oversized']
 
-const TYPE_META: Record<string, { color: string; bg: string; icon: string }> = {
-  General:    { color: '#3730a3', bg: '#e0e7ff', icon: '📦' },
-  Fragile:    { color: '#9d174d', bg: '#fce7f3', icon: '🔮' },
-  Hazardous:  { color: '#92400e', bg: '#fef3c7', icon: '⚠️' },
-  Perishable: { color: '#065f46', bg: '#d1fae5', icon: '🌡️' },
-  Oversized:  { color: '#1e40af', bg: '#dbeafe', icon: '📐' },
-}
-
-const empty: CargoFormState = {
-  description: '', consignor: '', consignee: '',
-  weightTons: '', volumeCbm: '', cargoType: 'General', specialInstructions: ''
-}
-
-function TypeBadge({ type }: { type: string }) {
-  const { t } = useTranslation()
-  const m = TYPE_META[type] || { color: '#3730a3', bg: '#e0e7ff', icon: '📦' }
-  return (
-    <span style={{ background: m.bg, color: m.color, padding: '.18rem .55rem', borderRadius: 999, fontSize: '.72rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '.25rem' }}>
-      {m.icon} {t(CARGO_TYPE_LABELS[type] || type)}
-    </span>
-  )
+const emptyForm = {
+  description: '',
+  consignor: '',
+  consignee: '',
+  weightTons: '',
+  volumeCbm: '',
+  cargoType: 'General',
+  specialInstructions: '',
 }
 
 export default function CargoPage() {
-  const { t } = useTranslation()
-  const [items, setItems] = useState<CargoItem[]>([])
-  const [modal, setModal] = useState(false)
-  const [form, setForm] = useState<CargoFormState>(empty)
+  const { t, i18n } = useTranslation()
+  const [rows, setRows] = useState<Cargo[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [search, setSearch] = useState('')
+  const [filter, setFilter] = useState<'all' | 'unassigned' | 'assigned'>('all')
+  const [open, setOpen] = useState(false)
   const [editId, setEditId] = useState<number | null>(null)
-  const [submitting, setSubmitting] = useState(false)
+  const [form, setForm] = useState(emptyForm)
+  const [saving, setSaving] = useState(false)
+  const [deleteId, setDeleteId] = useState<number | null>(null)
 
-  const load = () =>
-    api.get('/cargo').then(r => setItems(r.data)).catch(() => toast.error(t('failed')))
-  useEffect(() => { load() }, [])
+  const load = () => {
+    setLoading(true)
+    api.get<Cargo[]>('/cargo')
+      .then(r => setRows(r.data))
+      .catch(err => setError(apiError(err)))
+      .finally(() => setLoading(false))
+  }
+  useEffect(load, [])
 
-  const openNew = () => { setForm(empty); setEditId(null); setModal(true) }
-  const openEdit = (c: CargoItem) => {
-    setForm({
-      description: c.description,
-      consignor: c.consignor || '',
-      consignee: c.consignee || '',
-      weightTons: c.weightTons?.toString() || '',
-      volumeCbm: c.volumeCbm?.toString() || '',
-      cargoType: c.cargoType || 'General',
-      specialInstructions: c.specialInstructions || ''
+  const stats = useMemo(() => ({
+    total: rows.length,
+    unassigned: rows.filter(c => !c.tripId).length,
+    assigned: rows.filter(c => c.tripId).length,
+    tons: rows.reduce((sum, c) => sum + (c.weightTons ?? 0), 0),
+  }), [rows])
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return rows.filter(c => {
+      if (filter === 'unassigned' && c.tripId) return false
+      if (filter === 'assigned' && !c.tripId) return false
+      if (!q) return true
+      return [c.description, c.consignor, c.consignee, c.cargoType, c.tripNumber]
+        .filter(Boolean).some(v => String(v).toLowerCase().includes(q))
     })
-    setEditId(c.id)
-    setModal(true)
+  }, [rows, filter, search])
+
+  const startCreate = () => {
+    setEditId(null)
+    setForm(emptyForm)
+    setOpen(true)
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const startEdit = (cargo: Cargo) => {
+    setEditId(cargo.id)
+    setForm({
+      description: cargo.description,
+      consignor: cargo.consignor ?? '',
+      consignee: cargo.consignee ?? '',
+      weightTons: cargo.weightTons != null ? String(cargo.weightTons) : '',
+      volumeCbm: cargo.volumeCbm != null ? String(cargo.volumeCbm) : '',
+      cargoType: cargo.cargoType ?? 'General',
+      specialInstructions: cargo.specialInstructions ?? '',
+    })
+    setOpen(true)
+  }
+
+  const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+    setForm(prev => ({ ...prev, [key]: e.target.value }))
+
+  const save = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSubmitting(true)
+    setSaving(true)
     try {
-      if (editId) await api.put(`/cargo/${editId}`, form)
-      else await api.post('/cargo', form)
-      toast.success(editId ? t('cargo_updated') : t('cargo_created'))
-      setModal(false)
+      const payload = {
+        description: form.description.trim(),
+        consignor: form.consignor.trim() || null,
+        consignee: form.consignee.trim() || null,
+        weightTons: form.weightTons ? Number(form.weightTons) : null,
+        volumeCbm: form.volumeCbm ? Number(form.volumeCbm) : null,
+        cargoType: form.cargoType,
+        specialInstructions: form.specialInstructions.trim() || null,
+      }
+      if (editId) await api.put(`/cargo/${editId}`, payload)
+      else await api.post('/cargo', payload)
+      toast.success(editId ? t('cargo.updated') : t('cargo.created'))
+      setOpen(false)
       load()
-    } catch { toast.error(t('error')) }
-    finally { setSubmitting(false) }
+    } catch (err) {
+      toast.error(apiError(err))
+    } finally {
+      setSaving(false)
+    }
   }
 
-  const del = async (id: number) => {
-    if (!confirm(t('delete_cargo_confirm'))) return
-    try { await api.delete(`/cargo/${id}`); load(); toast.success(t('deleted')) }
-    catch { toast.error(t('error')) }
+  const remove = async () => {
+    if (!deleteId) return
+    try {
+      await api.delete(`/cargo/${deleteId}`)
+      toast.success(t('cargo.deleted'))
+      setDeleteId(null)
+      load()
+    } catch (err) {
+      toast.error(apiError(err))
+    }
   }
 
-  return (
-    <div style={{ width: '100%', maxWidth: '100%', overflowX: 'hidden', boxSizing: 'border-box' }}>
-      <style>{`
-        .cargo-table-wrap { display: block; overflow-x: auto; }
-        .cargo-cards-wrap { display: none; }
-        @media (max-width: 800px) {
-          .cargo-table-wrap { display: none; }
-          .cargo-cards-wrap { display: block; }
-        }
-        .cargo-card {
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: var(--radius);
-          padding: 1rem;
-          margin-bottom: .65rem;
-          box-shadow: var(--shadow-sm);
-          transition: box-shadow .15s;
-        }
-        .cargo-card:hover { box-shadow: var(--shadow); }
-        .cargo-modal-overlay {
-          position: fixed;
-          inset: 0;
-          background: rgba(0,0,0,.55);
-          display: flex;
-          align-items: flex-end;
-          justify-content: center;
-          z-index: 999;
-          padding: 0;
-          backdrop-filter: blur(3px);
-        }
-        .cargo-modal-box {
-          background: var(--surface);
-          border-radius: 20px 20px 0 0;
-          padding: 1.5rem 1.25rem;
-          width: 100%;
-          max-width: 560px;
-          max-height: 92vh;
-          overflow-y: auto;
-          box-shadow: 0 -8px 40px rgba(0,0,0,.18);
-          animation: slideUp .22s ease;
-        }
-        @keyframes slideUp {
-          from { transform: translateY(60px); opacity: 0; }
-          to   { transform: translateY(0);    opacity: 1; }
-        }
-        @media (min-width: 640px) {
-          .cargo-modal-overlay {
-            align-items: center;
-            padding: 1rem;
-          }
-          .cargo-modal-box {
-            border-radius: 20px;
-            max-height: 90vh;
-          }
-        }
-        .cargo-form-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: .75rem;
-        }
-        @media (max-width: 480px) {
-          .cargo-form-row { grid-template-columns: 1fr; }
-          .cargo-modal-box { padding: 1.25rem 1rem; }
-        }
-        .cargo-type-grid {
-          display: grid;
-          grid-template-columns: repeat(5, 1fr);
-          gap: .5rem;
-        }
-        @media (max-width: 480px) {
-          .cargo-type-grid { grid-template-columns: repeat(3, 1fr); }
-        }
-        .cargo-type-btn {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: .25rem;
-          padding: .55rem .35rem;
-          border-radius: 10px;
-          border: 2px solid var(--border);
-          background: var(--surface2);
-          cursor: pointer;
-          transition: all .15s;
-          font-size: .68rem;
-          font-weight: 700;
-          color: var(--text-muted);
-          text-align: center;
-          line-height: 1.2;
-        }
-        .cargo-type-btn.active {
-          border-color: var(--primary);
-          background: var(--primary-light);
-          color: var(--primary);
-        }
-        .cargo-type-btn:hover:not(.active) {
-          border-color: var(--text-muted);
-          background: var(--surface);
-        }
-        .modal-drag-handle {
-          width: 40px; height: 4px;
-          background: var(--border);
-          border-radius: 999px;
-          margin: 0 auto .75rem;
-        }
-      `}</style>
-
-      {/* Page header */}
-      <div style={{
-        background: 'linear-gradient(135deg, #1d4ed8, #7c3aed)',
-        borderRadius: 'var(--radius-lg)', padding: '1.25rem 1.5rem',
-        color: '#fff', marginBottom: '1.5rem',
-        boxShadow: '0 6px 20px rgba(29,78,216,.25)',
-        display: 'flex', justifyContent: 'space-between',
-        alignItems: 'center', flexWrap: 'wrap', gap: '1rem'
-      }}>
+  const columns: Column<Cargo>[] = [
+    {
+      key: 'description', header: t('cargo.description'), label: t('cargo.description'),
+      cell: c => (
         <div>
-          <h1 style={{ fontSize: '1.3rem', fontWeight: 800, marginBottom: '.15rem' }}>
-            📦 {t('cargo_management')}
-          </h1>
-          <p style={{ opacity: .8, fontSize: '.82rem', margin: 0 }}>
-            {items.length} {t('items')}
-          </p>
+          <div className="cell-main">{c.description}</div>
+          <div className="cell-sub">{c.cargoType ?? 'General'} · {formatDate(c.createdAt, i18n.language)}</div>
         </div>
-        <button
-          onClick={openNew}
-          style={{
-            background: 'rgba(255,255,255,.2)',
-            color: '#fff',
-            border: '1px solid rgba(255,255,255,.35)',
-            borderRadius: 10, padding: '.55rem 1.1rem',
-            cursor: 'pointer', fontWeight: 700,
-            fontSize: '.875rem', whiteSpace: 'nowrap'
-          }}>
-           {t('add_cargo')}
-        </button>
-      </div>
+      ),
+    },
+    {
+      key: 'route', header: t('cargo.consignor_consignee'), label: t('cargo.consignor_consignee'), hideOnMobile: true,
+      cell: c => <div><div className="small">{c.consignor ?? '—'}</div><div className="cell-sub">→ {c.consignee ?? '—'}</div></div>,
+    },
+    {
+      key: 'weight', header: t('cargo.weight'), label: t('cargo.weight'),
+      cell: c => <span className="mono">{formatTons(c.weightTons)}</span>,
+    },
+    {
+      key: 'volume', header: t('cargo.volume'), label: t('cargo.volume'), hideOnMobile: true,
+      cell: c => <span className="mono small">{c.volumeCbm ? `${formatNumber(c.volumeCbm, 1)} m³` : '—'}</span>,
+    },
+    {
+      key: 'trip', header: t('cargo.assignment'), label: t('cargo.assignment'),
+      cell: c => c.tripId
+        ? <Link to={`/management/trips/${c.tripId}`} className="badge badge-blue">{c.tripNumber ?? t('cargo.assigned')}</Link>
+        : <Badge tone="amber" dot>{t('cargo.unassigned')}</Badge>,
+    },
+    {
+      key: 'actions', header: '', label: '', className: 'cell-actions',
+      cell: c => (
+        <div className="cell-actions">
+          <button className="btn btn-ghost btn-icon" onClick={() => startEdit(c)} title={t('common.edit')}><Pencil size={14} /></button>
+          <button className="btn btn-ghost btn-icon" onClick={() => setDeleteId(c.id)} title={t('common.delete')}><Trash2 size={14} /></button>
+        </div>
+      ),
+    },
+  ]
 
-      {/* Desktop table */}
-      <div style={{
-        background: 'var(--surface)', border: '1px solid var(--border)',
-        borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-sm)',
-        overflow: 'hidden'
-      }} className="cargo-table-wrap">
-        {items.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>📭</div>
-            <div style={{ fontWeight: 600 }}>{t('no_cargo')}</div>
-          </div>
-        ) : (
-          <table style={{ width: '100%' }}>
-            <thead>
-              <tr>
-                <th>{t('description')}</th>
-                <th>{t('type')}</th>
-                <th>{t('weight')}</th>
-                <th>{t('consignor')}</th>
-                <th>{t('consignee')}</th>
-                <th>{t('trip')}</th>
-                <th>{t('instructions')}</th>
-                <th>{t('actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map(c => (
-                <tr key={c.id}>
-                  <td style={{ fontWeight: 700 }}>{c.description}</td>
-                  <td><TypeBadge type={c.cargoType} /></td>
-                  <td>{c.weightTons ? `${c.weightTons}t` : '—'}</td>
-                  <td>{c.consignor || '—'}</td>
-                  <td>{c.consignee || '—'}</td>
-                  <td>
-                    {c.tripId
-                      ? <span style={{ fontWeight: 600, color: 'var(--primary)' }}>#{c.tripId}</span>
-                      : <span style={{ color: '#22c55e', fontSize: '.78rem', fontWeight: 600 }}>{t('unassigned')}</span>}
-                  </td>
-                  <td style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {c.specialInstructions
-                      ? <span style={{ color: '#92400e' }}>⚠️ {c.specialInstructions}</span>
-                      : '—'}
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '.4rem' }}>
-                      <button
-                        className="btn btn-outline"
-                        style={{ padding: '.3rem .6rem', fontSize: '.75rem' }}
-                        onClick={() => openEdit(c)}>
-                        {t('edit')}
-                      </button>
-                      <button
-                        className="btn btn-danger"
-                        style={{ padding: '.3rem .6rem', fontSize: '.75rem' }}
-                        onClick={() => del(c.id)}>
-                        {t('delete')}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      {/* Mobile cards */}
-      <div className="cargo-cards-wrap">
-        {items.length === 0 ? (
-          <div style={{
-            background: 'var(--surface)', border: '1px solid var(--border)',
-            borderRadius: 'var(--radius)', textAlign: 'center',
-            padding: '3rem 1rem', color: 'var(--text-muted)'
-          }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>📭</div>
-            <div style={{ fontWeight: 600 }}>{t('no_cargo')}</div>
-          </div>
-        ) : items.map(c => (
-          <div key={c.id} className="cargo-card">
-            {/* Top row */}
-            <div style={{
-              display: 'flex', justifyContent: 'space-between',
-              alignItems: 'flex-start', gap: '.75rem', marginBottom: '.6rem'
-            }}>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{
-                  fontWeight: 800, fontSize: '.95rem', marginBottom: '.35rem',
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-                }}>
-                  {c.description}
-                </div>
-                <TypeBadge type={c.cargoType} />
-              </div>
-              <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                {c.tripId
-                  ? <span style={{
-                      fontWeight: 700, fontSize: '.8rem',
-                      color: 'var(--primary)',
-                      background: 'var(--primary-light)',
-                      padding: '.2rem .6rem', borderRadius: 999
-                    }}>
-                      Trip #{c.tripId}
-                    </span>
-                  : <span style={{
-                      color: '#16a34a', fontSize: '.75rem', fontWeight: 700,
-                      background: '#f0fdf4', padding: '.2rem .6rem', borderRadius: 999
-                    }}>
-                      {t('unassigned')}
-                    </span>}
-              </div>
-            </div>
-
-            {/* Meta chips */}
-            <div style={{
-              display: 'flex', gap: '.4rem', flexWrap: 'wrap',
-              marginBottom: c.specialInstructions ? '.6rem' : '.65rem'
-            }}>
-              {c.weightTons != null && (
-                <span style={{
-                  background: '#f0fdf4', color: '#16a34a',
-                  padding: '.15rem .5rem', borderRadius: 999,
-                  fontSize: '.72rem', fontWeight: 600
-                }}>
-                  ⚖️ {c.weightTons}t
-                </span>
-              )}
-              {c.consignor && (
-                <span style={{
-                  background: 'var(--surface2)', color: 'var(--text-muted)',
-                  padding: '.15rem .5rem', borderRadius: 999, fontSize: '.72rem', fontWeight: 600
-                }}>
-                  🏭 {c.consignor}
-                </span>
-              )}
-              {c.consignee && (
-                <span style={{
-                  background: 'var(--surface2)', color: 'var(--text-muted)',
-                  padding: '.15rem .5rem', borderRadius: 999, fontSize: '.72rem', fontWeight: 600
-                }}>
-                  📦 {c.consignee}
-                </span>
-              )}
-            </div>
-
-            {/* Special instructions */}
-            {c.specialInstructions && (
-              <div style={{
-                fontSize: '.78rem', color: '#92400e',
-                background: '#fffbeb', borderRadius: 8,
-                padding: '.5rem .75rem', marginBottom: '.65rem',
-                border: '1px solid #fde68a', wordBreak: 'break-word'
-              }}>
-                ⚠️ {c.specialInstructions}
-              </div>
-            )}
-
-            {/* Actions */}
-            <div style={{ display: 'flex', gap: '.5rem' }}>
-              <button
-                className="btn btn-outline"
-                style={{ flex: 1, padding: '.4rem', fontSize: '.8rem', textAlign: 'center' }}
-                onClick={() => openEdit(c)}>
-                ✏️ {t('edit')}
-              </button>
-              <button
-                className="btn btn-danger"
-                style={{ flex: 1, padding: '.4rem', fontSize: '.8rem', textAlign: 'center' }}
-                onClick={() => del(c.id)}>
-                🗑️ {t('delete')}
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Modal — bottom sheet on mobile, centered on desktop */}
-      {modal && (
-        <div
-          className="cargo-modal-overlay"
-          onClick={e => { if (e.target === e.currentTarget) setModal(false) }}>
-          <div className="cargo-modal-box">
-
-            {/* Drag handle (mobile only) */}
-            <div className="modal-drag-handle" />
-
-            {/* Modal header */}
-            <div style={{
-              display: 'flex', justifyContent: 'space-between',
-              alignItems: 'center', marginBottom: '1.25rem'
-            }}>
-              <div>
-                <h2 style={{ fontWeight: 800, fontSize: '1.05rem', marginBottom: '.1rem' }}>
-                  {editId ? `✏️ ${t('edit_cargo')}` : `📦 ${t('new_cargo')}`}
-                </h2>
-                <p style={{ fontSize: '.75rem', color: 'var(--text-muted)', margin: 0 }}>
-                  {editId ? t('edit_cargo') : t('add_cargo')}
-                </p>
-              </div>
-              <button
-                onClick={() => setModal(false)}
-                style={{
-                  background: 'var(--surface2)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '50%', width: 34, height: 34,
-                  cursor: 'pointer', display: 'flex',
-                  alignItems: 'center', justifyContent: 'center',
-                  fontSize: '.9rem', flexShrink: 0
-                }}>✕</button>
-            </div>
-
-            <form onSubmit={handleSubmit}>
-              {/* Description */}
-              <div className="form-group">
-                <label style={{ fontSize: '.8rem', fontWeight: 700 }}>
-                  {t('description_required')}
-                </label>
-                <input
-                  className="form-control"
-                  required
-                  placeholder="e.g. Washing machines"
-                  value={form.description}
-                  onChange={e => setForm({ ...form, description: e.target.value })}
-                />
-              </div>
-
-              {/* Cargo type — visual selector */}
-              <div className="form-group">
-                <label style={{ fontSize: '.8rem', fontWeight: 700, display: 'block', marginBottom: '.5rem' }}>
-                  {t('cargo_type')}
-                </label>
-                <div className="cargo-type-grid">
-{TYPES.map(tp => {
-  const m = TYPE_META[tp]
-  const isActive = form.cargoType === tp
   return (
-    <button key={tp} type="button" className={`cargo-type-btn ${isActive ? 'active' : ''}`}
-      onClick={() => setForm({ ...form, cargoType: tp })}
-      style={isActive ? { borderColor: m.color, background: m.bg, color: m.color } : {}}>
-      <span style={{ fontSize: '1.1rem' }}>{m.icon}</span>
-      {t(CARGO_TYPE_LABELS[tp] || tp)}   {/* ← translated */}
-    </button>
-  )
-})}
-                </div>
-              </div>
+    <div className="page">
+      <PageHeader
+        eyebrow={t('cargo.eyebrow')}
+        title={t('cargo.title')}
+        description={t('cargo.subtitle')}
+        actions={<button className="btn btn-primary" onClick={startCreate}><Plus /> {t('cargo.new')}</button>}
+      />
 
-              {/* Consignor / Consignee */}
-              <div className="cargo-form-row">
-                <div className="form-group">
-                  <label style={{ fontSize: '.8rem', fontWeight: 700 }}>{t('consignor')}</label>
-                  <input
-                    className="form-control"
-                    placeholder="Sender"
-                    value={form.consignor}
-                    onChange={e => setForm({ ...form, consignor: e.target.value })}
-                  />
-                </div>
-                <div className="form-group">
-                  <label style={{ fontSize: '.8rem', fontWeight: 700 }}>{t('consignee')}</label>
-                  <input
-                    className="form-control"
-                    placeholder="Receiver"
-                    value={form.consignee}
-                    onChange={e => setForm({ ...form, consignee: e.target.value })}
-                  />
-                </div>
-              </div>
+      <div className="stat-grid">
+        <Stat icon={Boxes} label={t('cargo.total_items')} value={stats.total} />
+        <Stat icon={Weight} tone="blue" label={t('cargo.total_weight')} value={formatTons(stats.tons)} />
+        <Stat icon={PackageCheck} tone="green" label={t('cargo.assigned')} value={stats.assigned} />
+        <Stat icon={Package} tone="amber" label={t('cargo.unassigned')} value={stats.unassigned} />
+      </div>
 
-              {/* Weight / Volume */}
-              <div className="cargo-form-row">
-                <div className="form-group">
-                  <label style={{ fontSize: '.8rem', fontWeight: 700 }}>{t('weight_tons')}</label>
-                  <input
-                    className="form-control"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    value={form.weightTons}
-                    onChange={e => setForm({ ...form, weightTons: e.target.value })}
-                  />
-                </div>
-                <div className="form-group">
-                  <label style={{ fontSize: '.8rem', fontWeight: 700 }}>{t('volume_cbm')}</label>
-                  <input
-                    className="form-control"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    value={form.volumeCbm}
-                    onChange={e => setForm({ ...form, volumeCbm: e.target.value })}
-                  />
-                </div>
-              </div>
+      <div className="toolbar">
+        <Segmented
+          value={filter}
+          onChange={setFilter}
+          options={[
+            { value: 'all', label: t('common.all') },
+            { value: 'unassigned', label: t('cargo.unassigned') },
+            { value: 'assigned', label: t('cargo.assigned') },
+          ]}
+        />
+        <div className="spacer" />
+        <SearchInput value={search} onChange={setSearch} placeholder={t('cargo.search')} />
+      </div>
 
-              {/* Special instructions */}
-              <div className="form-group">
-                <label style={{ fontSize: '.8rem', fontWeight: 700 }}>{t('special_instructions')}</label>
-                <textarea
-                  className="form-control"
-                  rows={3}
-                  placeholder="Any special handling notes..."
-                  value={form.specialInstructions}
-                  onChange={e => setForm({ ...form, specialInstructions: e.target.value })}
-                />
-              </div>
+      {error && <div className="alert error mb-3">{error}</div>}
 
-              {/* Submit */}
-              <div style={{ display: 'flex', gap: '.75rem', marginTop: '1.25rem' }}>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={submitting}
-                  style={{ flex: 1, padding: '.7rem', fontSize: '.9rem', fontWeight: 700 }}>
-                  {submitting
-                    ? t('saving')
-                    : editId ? `✏️ ${t('update')}` : `📦 ${t('create')}`}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  onClick={() => setModal(false)}
-                  style={{ padding: '.7rem 1.25rem', fontSize: '.9rem' }}>
-                  {t('cancel')}
-                </button>
-              </div>
-            </form>
+      <Card bodyClass="" >
+        {loading ? <PageLoader /> : (
+          <DataTable
+            rows={filtered}
+            columns={columns}
+            rowKey={c => c.id}
+            empty={
+              <EmptyState
+                icon={Package}
+                title={t('cargo.empty')}
+                text={t('cargo.empty_text')}
+                action={<button className="btn btn-outline btn-sm" onClick={startCreate}><Plus /> {t('cargo.new')}</button>}
+              />
+            }
+          />
+        )}
+      </Card>
+
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title={editId ? t('cargo.edit') : t('cargo.new')}
+        description={t('cargo.form_sub')}
+        footer={
+          <>
+            <button className="btn btn-outline" onClick={() => setOpen(false)} type="button">{t('common.cancel')}</button>
+            <button className="btn btn-primary" type="submit" form="cargo-form" disabled={saving || !form.description.trim()}>
+              {saving ? <Loader2 size={15} style={{ animation: 'spin .7s linear infinite' }} /> : null}
+              {saving ? t('common.saving') : t('common.save')}
+            </button>
+          </>
+        }
+      >
+        <form id="cargo-form" onSubmit={save}>
+          <Field label={t('cargo.description')} required>
+            <input className="input" value={form.description} onChange={set('description')} placeholder={t('cargo.description_placeholder')} required autoFocus />
+          </Field>
+          <div className="form-grid">
+            <Field label={t('cargo.consignor')}>
+              <input className="input" value={form.consignor} onChange={set('consignor')} placeholder="Tehnomax d.o.o." />
+            </Field>
+            <Field label={t('cargo.consignee')}>
+              <input className="input" value={form.consignee} onChange={set('consignee')} placeholder="Media Market Sarajevo" />
+            </Field>
+            <Field label={t('cargo.weight_tons')}>
+              <input className="input" type="number" step="0.1" min="0" value={form.weightTons} onChange={set('weightTons')} placeholder="8.5" />
+            </Field>
+            <Field label={t('cargo.volume_cbm')}>
+              <input className="input" type="number" step="0.1" min="0" value={form.volumeCbm} onChange={set('volumeCbm')} placeholder="32" />
+            </Field>
+            <Field label={t('cargo.type')}>
+              <select className="select" value={form.cargoType} onChange={set('cargoType')}>
+                {TYPES.map(type => <option key={type} value={type}>{t(`cargo_type.${type.toLowerCase()}`, type)}</option>)}
+              </select>
+            </Field>
+            <Field label={t('cargo.instructions')} className="span-2">
+              <textarea className="textarea" value={form.specialInstructions} onChange={set('specialInstructions')} placeholder={t('cargo.instructions_placeholder')} maxLength={1000} />
+            </Field>
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
+
+      <ConfirmDialog
+        open={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={remove}
+        danger
+        title={t('cargo.delete_title')}
+        text={t('cargo.delete_text')}
+        confirmLabel={t('common.delete')}
+      />
     </div>
   )
 }
+

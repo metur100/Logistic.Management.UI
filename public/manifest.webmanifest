@@ -1,0 +1,17 @@
+{
+  "name": "LogistiTrack",
+  "short_name": "LogistiTrack",
+  "description": "Transport operations for logistics companies: transports, fleet, cargo and drivers.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f2f3ef",
+  "theme_color": "#101922",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

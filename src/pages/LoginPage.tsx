@@ -1,104 +1,89 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+﻿import { useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
-import LanguageSwitcher from '../components/LanguageSwitcher'
-import api from '../api/axios'
-
-interface LoginForm {
-  username: string
-  password: string
-}
-
-interface LoginResponse {
-  token: string
-  role: string
-  fullName: string
-  userId: number
-}
+import { ArrowRight, Info, Loader2 } from 'lucide-react'
+import { api, apiError } from '../api/axios'
+import { useAuth } from '../context/AuthContext'
+import { Field, PasswordField } from '../components/ui'
+import AuthLayout from '../components/AuthLayout'
+import type { AuthUser } from '../lib/types'
 
 export default function LoginPage() {
-  const [form, setForm] = useState<LoginForm>({ username: '', password: '' })
-  const [loading, setLoading] = useState<boolean>(false)
-  const { login } = useAuth()
-  const nav = useNavigate()
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const { login, user, loading } = useAuth()
   const { t } = useTranslation()
+  const nav = useNavigate()
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    if (!loading && user) {
+      nav(user.role === 'Admin' ? '/admin' : user.role === 'Manager' ? '/management' : '/driver', { replace: true })
+    }
+  }, [loading, user, nav])
+
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
+    setBusy(true)
+    setError('')
     try {
-      const res = await api.post<LoginResponse>('/auth/login', form)
-      login(res.data)
-      toast.success(t('welcome', { name: res.data.fullName }))
-      nav(res.data.role === 'Driver' ? '/driver' : res.data.role === 'Admin' ? '/admin' : '/management')
-    } catch {
-      toast.error(t('invalid_credentials'))
+      const { data } = await api.post<AuthUser>('/auth/login', { username, password })
+      login(data)
+      toast.success(t('auth.welcome', { name: data.fullName.split(' ')[0] }))
+      nav(data.role === 'Admin' ? '/admin' : data.role === 'Manager' ? '/management' : '/driver', { replace: true })
+    } catch (err) {
+      setError(apiError(err, t('auth.invalid')))
     } finally {
-      setLoading(false)
+      setBusy(false)
     }
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'linear-gradient(135deg,#3b4fd8 0%,#1a1a2e 100%)',
-      padding: '1rem'
-    }}>
-      <div style={{ position: 'absolute', top: '1rem', right: '1rem' }}>
-        <LanguageSwitcher />
-      </div>
-      <div style={{
-        background: '#fff',
-        borderRadius: 16,
-        padding: '2.5rem',
-        width: '100%',
-        maxWidth: 420,
-        boxShadow: '0 20px 60px rgba(0,0,0,.3)'
-      }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '.5rem' }}>🚛</div>
-          <h1 style={{ fontSize: '1.6rem', fontWeight: 700, color: '#1a1a2e' }}>{t('logistics_system')}</h1>
-          <p style={{ color: '#64748b', marginTop: '.25rem' }}>{t('sign_in_account')}</p>
+    <AuthLayout
+      eyebrow={t('auth.sign_in_eyebrow')}
+      title={t('auth.sign_in_title')}
+      lead={t('auth.sign_in_lead')}
+      footer={
+        <div className="auth-alt">
+          {t('auth.new_company')} <Link to="/register">{t('auth.register_company')}</Link>
         </div>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>{t('username')}</label>
-            <input
-              className="form-control"
-              value={form.username}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, username: e.target.value })}
-              required
-              placeholder={t('enter_username')}
-            />
-          </div>
-          <div className="form-group">
-            <label>{t('password')}</label>
-            <input
-              className="form-control"
-              type="password"
-              value={form.password}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, password: e.target.value })}
-              required
-              placeholder={t('enter_password')}
-            />
-          </div>
-          <button
-            className="btn btn-primary"
-            style={{ width: '100%', padding: '.75rem', marginTop: '.5rem', fontSize: '1rem' }}
-            disabled={loading}
-          >
-            {loading ? t('signing_in') : t('sign_in')}
-          </button>
-        </form>
-        <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '.85rem', color: '#64748b' }}>
-          {t('default_admin')}
-        </p>
+      }
+    >
+      <form onSubmit={submit} noValidate>
+        {error && <div className="alert error mb-3">{error}</div>}
+        <Field label={t('auth.username')} required htmlFor="username">
+          <input
+            id="username"
+            className="input"
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            placeholder={t('auth.username_placeholder')}
+            autoComplete="username"
+            autoCapitalize="none"
+            required
+          />
+        </Field>
+        <Field label={t('auth.password')} required htmlFor="password">
+          <PasswordField
+            id="password"
+            value={password}
+            onChange={setPassword}
+            placeholder={t('auth.password_placeholder')}
+            autoComplete="current-password"
+          />
+        </Field>
+        <button className="btn btn-primary btn-lg btn-block" disabled={busy || !username || !password}>
+          {busy ? <Loader2 size={17} style={{ animation: 'spin .7s linear infinite' }} /> : <ArrowRight size={17} />}
+          {busy ? t('auth.signing_in') : t('auth.sign_in')}
+        </button>
+      </form>
+      <div className="auth-help">
+        <Info size={14} />
+        {t('auth.driver_help')}
       </div>
-    </div>
+    </AuthLayout>
   )
 }
+

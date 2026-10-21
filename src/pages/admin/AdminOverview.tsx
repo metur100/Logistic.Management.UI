@@ -1,128 +1,155 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import api from '../../api/axios'
-import { getTickets } from '../../api/tickets'
-
-interface User {
-  id: number
-  role: string
-  isActive: boolean
-}
-
-interface Stats {
-  total: number
-  drivers: number
-  managers: number
-  admins: number
-  blocked: number
-  openTickets: number
-}
+import {
+  ArrowUpRight, Building2, ChevronRight, Gauge, LifeBuoy, Package,
+  Route, ShieldCheck, Truck, Users, AlertTriangle,
+} from 'lucide-react'
+import api, { apiError } from '../../api/axios'
+import type { AdminOverview as AdminOverviewData } from '../../lib/types'
+import { formatDate, formatNumber, lastMonthKeys, monthLabel } from '../../lib/format'
+import {
+  Badge, Card, EmptyState, PageHeader, PageLoader, Stat,
+} from '../../components/ui'
 
 export default function AdminOverview() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const nav = useNavigate()
-  const [stats, setStats] = useState<Stats>({ total: 0, drivers: 0, managers: 0, admins: 0, blocked: 0, openTickets: 0 })
-  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState<AdminOverviewData | null>(null)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    Promise.all([
-      api.get('/users'),
-      getTickets(),
-    ]).then(([usersRes, tickets]) => {
-      const users: User[] = Array.isArray(usersRes.data) ? usersRes.data : (usersRes.data?.data ?? [])
-      const ticketList = Array.isArray(tickets) ? tickets : []
-
-      setStats({
-        total: users.length,
-        drivers: users.filter(u => u.role === 'Driver').length,
-        managers: users.filter(u => u.role === 'Manager').length,
-        admins: users.filter(u => u.role === 'Admin').length,
-        blocked: users.filter(u => !u.isActive).length,
-        openTickets: ticketList.filter(tk => tk.status === 'Open' || tk.status === 'InProgress').length,
-      })
-    }).catch(console.error).finally(() => setLoading(false))
+    api.get<AdminOverviewData>('/admin/overview')
+      .then(r => setData(r.data))
+      .catch(err => setError(apiError(err)))
   }, [])
 
-  const statCards = [
-    { label: t('total_users'), value: stats.total, icon: '👥', color: '#4338ca', bg: '#eef2ff', path: '/admin/users' },
-    { label: t('drivers'), value: stats.drivers, icon: '🚛', color: '#1e40af', bg: '#dbeafe', path: '/admin/users' },
-    { label: t('managers'), value: stats.managers, icon: '📋', color: '#7e22ce', bg: '#f3e8ff', path: '/admin/users' },
-    { label: t('admins'), value: stats.admins, icon: '🛡️', color: '#9d174d', bg: '#fce7f3', path: '/admin/users' },
-    { label: t('blocked_users'), value: stats.blocked, icon: '🔒', color: '#dc2626', bg: '#fee2e2', path: '/admin/users' },
-    { label: t('open_tickets'), value: stats.openTickets, icon: '🎫', color: '#d97706', bg: '#fffbeb', path: '/admin/tickets' },
-  ]
+  if (error) return <div className="page"><div className="alert error">{error}</div></div>
+  if (!data) return <PageLoader />
 
-  if (loading) return <div className="loading-spinner"><div className="spinner" /></div>
+  const { stats } = data
+  const maxMonth = Math.max(1, ...data.monthly.map(m => m.total))
+  const monthSeries = lastMonthKeys(6).map(key => data.monthly.find(m => m.monthKey === key) ?? { monthKey: key, total: 0, delivered: 0 })
 
   return (
-    <div style={{ maxWidth: '100%', overflowX: 'hidden' }}>
-      <style>{`
-        .admin-stat-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: .85rem;
+    <div className="page">
+      <PageHeader
+        eyebrow={t('admin.overview_eyebrow')}
+        title={t('admin.overview_title')}
+        description={t('admin.overview_sub')}
+        actions={
+          <>
+            <button className="btn btn-outline" onClick={() => nav('/admin/tickets')}><LifeBuoy /> {t('admin.support_queue')}</button>
+            <button className="btn btn-primary" onClick={() => nav('/admin/companies')}><Building2 /> {t('admin.companies')}</button>
+          </>
         }
-        @media (max-width: 640px) {
-          .admin-stat-grid { grid-template-columns: repeat(2, 1fr); gap: .6rem; }
-        }
-      `}</style>
+      />
 
-      {/* Header */}
-      <div style={{
-        background: 'linear-gradient(135deg, #7f1d1d, #991b1b)',
-        borderRadius: 'var(--radius-lg)', padding: '1.25rem 1.5rem',
-        color: '#fff', marginBottom: '1.5rem',
-        boxShadow: '0 6px 20px rgba(153,27,27,.3)',
-      }}>
-        <h1 style={{ fontSize: '1.3rem', fontWeight: 800, marginBottom: '.15rem' }}>
-          🛡️ {t('nav_overview')}
-        </h1>
-        <p style={{ opacity: .85, fontSize: '.82rem', margin: 0 }}>
-          {t('admin_overview_subtitle')}
-        </p>
-      </div>
-
-      {/* Stat cards */}
-      <div className="admin-stat-grid" style={{ marginBottom: '1.5rem' }}>
-        {statCards.map(c => (
-          <div
-            key={c.label}
-            className="stat-card"
-            style={{ cursor: 'pointer' }}
-            onClick={() => nav(c.path)}>
-            <div className="stat-icon" style={{ background: c.bg, color: c.color }}>
-              {c.icon}
-            </div>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: c.color, lineHeight: 1 }}>
-                {c.value}
-              </div>
-              <div style={{ fontSize: '.75rem', color: 'var(--text-muted)', fontWeight: 600, marginTop: '.25rem' }}>
-                {c.label}
-              </div>
-            </div>
+      <div className="hero-strip">
+        <div className="left">
+          <div className="mark"><ShieldCheck /></div>
+          <div>
+            <h2>{t('admin.platform_access')}</h2>
+            <p>{t('admin.platform_access_sub')}</p>
           </div>
-        ))}
+        </div>
+        <Badge tone="violet" dot>{t('admin.read_only')}</Badge>
       </div>
 
-      {/* Quick actions */}
-      <div className="card">
-        <h2 style={{ fontSize: '.95rem', fontWeight: 700, marginBottom: '1rem' }}>
-          {t('quick_actions')}
-        </h2>
-        <div style={{ display: 'flex', gap: '.75rem', flexWrap: 'wrap' }}>
-          <button className="btn btn-primary" onClick={() => nav('/admin/users')}>
-            👥 {t('manage_users')}
-          </button>
-          <button className="btn btn-outline" onClick={() => nav('/admin/tickets')}>
-            🎫 {t('view_tickets')}
-          </button>
-          <button className="btn btn-outline" onClick={() => nav('/management')}>
-            ↪️ {t('go_to_management')}
-          </button>
+      <div className="stat-grid">
+        <Stat icon={Building2} tone="orange" label={t('admin.companies')} value={stats.companiesTotal} hint={`${stats.companiesActive} ${t('admin.active')}`} onClick={() => nav('/admin/companies')} />
+        <Stat icon={Users} tone="violet" label={t('admin.drivers')} value={stats.drivers} hint={`${stats.managers} ${t('admin.managers')}`} onClick={() => nav('/admin/users')} />
+        <Stat icon={Truck} tone="blue" label={t('admin.vehicles')} value={stats.vehicles} hint={t('admin.vehicles_hint')} />
+        <Stat icon={Package} tone="amber" label={t('admin.cargo')} value={stats.cargoItems} hint={`${formatNumber(stats.cargoTons, 1)} t`} />
+        <Stat icon={Route} tone="green" label={t('admin.transports')} value={stats.tripsTotal} hint={`${stats.tripsActive} ${t('admin.active')}`} />
+        <Stat icon={Gauge} tone="green" label={t('admin.delivered_month')} value={stats.tripsMonth} hint={`${stats.tripsDelivered} ${t('admin.total')}`} />
+        <Stat icon={LifeBuoy} tone={stats.openTickets ? 'red' : 'slate'} label={t('admin.open_tickets')} value={stats.openTickets} onClick={() => nav('/admin/tickets')} />
+        <Stat icon={AlertTriangle} tone={stats.openIncidents ? 'red' : 'slate'} label={t('admin.open_incidents')} value={stats.openIncidents} hint={t('admin.incidents_hint')} />
+      </div>
+
+      <div className="grid grid-2">
+        <div className="stack" style={{ gap: 16 }}>
+          <Card title={t('admin.platform_volume')} subtitle={t('admin.platform_volume_sub')}>
+            <div className="bar-chart">
+              {monthSeries.map(m => (
+                <div className="bar-col" key={m.monthKey} title={`${m.total} / ${m.delivered}`}>
+                  <div className="bars">
+                    <div className="bar" style={{ height: `${Math.max(3, (m.total / maxMonth) * 100)}%` }} />
+                    <div className="bar b2" style={{ height: `${Math.max(2, (m.delivered / maxMonth) * 100)}%` }} />
+                  </div>
+                  <div className="m">{monthLabel(m.monthKey, i18n.language)}</div>
+                </div>
+              ))}
+            </div>
+            <div className="bar-legend mt-2">
+              <span><i style={{ background: 'var(--surface-3)' }} /> {t('admin.transports')}</span>
+              <span><i style={{ background: 'var(--ink-800)' }} /> {t('admin.delivered')}</span>
+            </div>
+          </Card>
+
+          <Card title={t('admin.top_companies')} subtitle={t('admin.top_companies_sub')} actions={<Link to="/admin/companies" className="btn btn-ghost btn-sm">{t('common.view_all')} <ArrowUpRight size={13} /></Link>}>
+            {data.topCompanies.length === 0 ? <EmptyState icon={Building2} title={t('admin.no_companies')} /> : (
+              <div className="list">
+                {data.topCompanies.map(company => (
+                  <Link key={company.id} to={`/admin/companies/${company.id}`} className="list-row">
+                    <div className="grow">
+                      <div className="t">{company.name}</div>
+                      <div className="s">{company.city ?? '—'} · {company.drivers} {t('admin.drivers_short')} · {company.vehicles} {t('admin.vehicles_short')}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="mono small">{company.trips} {t('admin.trips_short')}</div>
+                      <div className="tiny faint">{company.activeTrips} {t('admin.active')}</div>
+                    </div>
+                    <ChevronRight size={14} className="faint" />
+                  </Link>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
+
+        <div className="stack" style={{ gap: 16 }}>
+          <Card title={t('admin.recent_registrations')} subtitle={t('admin.recent_registrations_sub')}>
+            {data.recentCompanies.length === 0 ? <p className="small muted">{t('admin.no_companies')}</p> : (
+              <div className="list">
+                {data.recentCompanies.map(company => (
+                  <Link key={company.id} to={`/admin/companies/${company.id}`} className="list-row">
+                    <div className="grow">
+                      <div className="t">{company.name}</div>
+                      <div className="s">{company.city ?? company.country ?? '—'} · {formatDate(company.createdAt, i18n.language)}</div>
+                    </div>
+                    <Badge tone={company.status === 'Active' ? 'green' : 'red'} dot>{company.status === 'Active' ? t('admin.active') : t('admin.suspended')}</Badge>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          <Card title={t('admin.recent_tickets')} subtitle={t('admin.recent_tickets_sub')} actions={<Link to="/admin/tickets" className="btn btn-ghost btn-sm">{t('admin.support_queue')} <ArrowUpRight size={13} /></Link>}>
+            {data.recentTickets.length === 0 ? <p className="small muted">{t('support.empty')}</p> : (
+              <div className="list">
+                {data.recentTickets.map(ticket => (
+                  <Link key={ticket.id} to="/admin/tickets" className="list-row">
+                    <div className="grow">
+                      <div className="t">{ticket.subject}</div>
+                      <div className="s">{ticket.companyName ?? '—'} · {formatDate(ticket.createdAt, i18n.language)}</div>
+                    </div>
+                    <Badge tone={ticket.status === 'Open' ? 'red' : ticket.status === 'Resolved' ? 'green' : 'amber'}>{t(`support.status_${ticket.status}`, ticket.status)}</Badge>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          <Card title={t('admin.quick_links')}>
+            <div className="quick-grid">
+              <Link className="quick-tile" to="/admin/companies"><span className="icon" style={{ background: 'var(--accent-soft)', color: 'var(--accent-dark)' }}><Building2 /></span><span><span className="t">{t('admin.companies')}</span><span className="s">{t('admin.companies_sub')}</span></span></Link>
+              <Link className="quick-tile" to="/admin/users"><span className="icon" style={{ background: 'var(--violet-soft)', color: 'var(--violet)' }}><Users /></span><span><span className="t">{t('admin.users')}</span><span className="s">{t('admin.users_sub')}</span></span></Link>
+            </div>
+          </Card>
         </div>
       </div>
     </div>
   )
 }
+
