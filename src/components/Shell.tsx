@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import api from '../api/axios'
-import { Avatar, Logo } from './ui'
+import { Avatar, LanguageSelect, Logo } from './ui'
 
 type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean; badge?: boolean }
 
@@ -132,6 +132,7 @@ export default function Shell({ variant }: { variant: 'management' | 'admin' | '
               </button>
             </div>
             <div className="sidebar-actions">
+              <LanguageSelect dark />
               <button className="logout-btn" onClick={handleLogout} aria-label={t('auth.sign_out')} title={t('auth.sign_out')}>
                 <LogOut size={15} />
               </button>
@@ -147,6 +148,7 @@ export default function Shell({ variant }: { variant: 'management' | 'admin' | '
           </button>
           <Logo />
           <div className="top-actions">
+            <LanguageSelect dark />
             <button className="icon-btn" onClick={() => nav(settingsTo)} aria-label={settingsLabel}>
               <SettingsIcon />
             </button>

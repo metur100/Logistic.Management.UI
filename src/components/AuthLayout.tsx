@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Route, ShieldCheck, Truck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Logo } from './ui'
+import { Logo, LanguageSelect } from './ui'
 
 export default function AuthLayout({
   eyebrow,
@@ -44,6 +44,9 @@ export default function AuthLayout({
       </section>
 
       <main className="auth-panel">
+        <div className="auth-top">
+          <LanguageSelect />
+        </div>
         <div className="auth-mobile-brand"><Logo /></div>
         <div className="auth-box">
           <div className="eyebrow">{eyebrow}</div>

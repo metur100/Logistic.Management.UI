@@ -1,11 +1,12 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import en from './en.json'
+import bs from './bs.json'
 
 /**
- * English is the source language. Keys not present in en.json fall back to a
- * readable label derived from the key (e.g. `dashboard.live_operations` →
- * "Live operations") so a missing translation can never leak a raw key into UI.
+ * English is the source language, Bosnian is the second UI language.
+ * Keys missing from a language fall back to a readable label derived from the
+ * key (e.g. `dashboard.live_operations` → "Live operations"), never a raw key.
  */
 const NAMESPACE_LABEL: Record<string, string> = {
   dashboard: 'Dashboard',
@@ -85,8 +86,8 @@ function humanize(key: string): string {
 i18n
   .use(initReactI18next)
   .init({
-    resources: { en: { translation: en } },
-    lng: 'en',
+    resources: { en: { translation: en }, bs: { translation: bs } },
+    lng: localStorage.getItem('lang') || 'en',
     fallbackLng: 'en',
     keySeparator: false,
     nsSeparator: false,
