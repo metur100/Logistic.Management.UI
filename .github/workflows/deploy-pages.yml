@@ -8,6 +8,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -58,6 +60,16 @@ jobs:
           name: cloudflare-diagnostics
           path: cloudflare-diagnostics.txt
           if-no-files-found: ignore
+
+      - name: Publish diagnostics
+        if: always()
+        continue-on-error: true
+        run: |
+          git config user.name "LogistiTrack CI"
+          git config user.email "ci@logistitrack.local"
+          git add cloudflare-diagnostics.txt
+          git commit -m "Cloudflare deployment diagnostics [skip ci]" || true
+          git push || true
 
       - name: Fail if deploy failed
         if: steps.deploy.outcome == 'failure'
