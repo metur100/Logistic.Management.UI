@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">LogistiTrack</string>
+    <string name="tagline">Transport operations</string>
+    <string name="offline_title">No connection</string>
+    <string name="offline_message">LogistiTrack needs an internet connection. Check your mobile data or Wi-Fi and try again.</string>
+    <string name="retry">Try again</string>
+    <string name="choose_file">Choose a file</string>
+</resources>

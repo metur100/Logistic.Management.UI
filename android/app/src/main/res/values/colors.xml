@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ink">#101922</color>
+    <color name="ink_soft">#1A2632</color>
+    <color name="paper">#F2F3EF</color>
+    <color name="white">#FFFFFF</color>
+    <color name="accent">#E8590C</color>
+    <color name="accent_dark">#C2410C</color>
+    <color name="muted">#66727F</color>
+    <color name="splash_muted">#7F8C99</color>
+    <color name="ic_launcher_background">#E8590C</color>
+</resources>

@@ -1,0 +1,16 @@
+# Android / IntelliJ
+*.iml
+.gradle/
+local.properties
+.idea/
+.DS_Store
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Release signing must never be committed.
+keystore.properties
+release.keystore
+*.jks
+*.keystore
