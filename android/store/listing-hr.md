@@ -61,6 +61,11 @@ Politika privatnosti: https://logistic-management-ui.pages.dev/privacy
 ## Application ID
 ba.logistitrack.app
 
+## Napomene o verziji 1.0.2
+- Verzija 3 (Play Console je već iskoristio verziju 2)
+- Ciljna verzija Android 16 (API 36)
+- Nova adaptivna ikona rute i odredišta
+
 ## Napomene o verziji 1.0.1
 - Ciljna verzija Android 16 (API 36)
 - Nova adaptivna ikona rute i odredišta

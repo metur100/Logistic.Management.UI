@@ -13,7 +13,7 @@
 | `data-safety-hr.md` | Data safety reference translation (Croatian) |
 | `play-console-checklist.md` | Step-by-step release checklist and reviewer access |
 | `LogistiTrack-PlayStore-assets.zip` | Complete package for handoff |
-| `webview-1.0.1.png` | Emulator proof of the 1.0.1 WebView build |
+| `webview-1.0.2.png` | Emulator proof of the 1.0.1 WebView build |
 
 ## Language setup in Play Console
 

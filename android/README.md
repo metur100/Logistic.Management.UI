@@ -14,7 +14,7 @@ The web app is fully responsive and runs full-screen inside the WebView.
 ./gradlew bundleRelease
 ```
 
-Version: `1.0.1` (versionCode 2) · Target API 36
+Version: `1.0.2` (versionCode 3) · Target API 36
 
 Debug APK: `app/build/outputs/apk/debug/app-debug.apk`
 

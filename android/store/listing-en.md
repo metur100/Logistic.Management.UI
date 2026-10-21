@@ -56,6 +56,11 @@ Privacy policy: https://logistic-management-ui.pages.dev/privacy
 ## Application ID
 ba.logistitrack.app
 
+## Release notes (version 1.0.2)
+- Version code 3 (Play Console already used version code 2)
+- Target Android 16 (API 36)
+- New adaptive app icon
+
 ## Release notes (version 1.0.1)
 - Target Android 16 (API 36)
 - New adaptive app icon
