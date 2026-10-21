@@ -10,6 +10,11 @@ export const api = axios.create({ baseURL })
 api.interceptors.request.use(cfg => {
   const token = localStorage.getItem('token')
   if (token) cfg.headers.Authorization = `Bearer ${token}`
+  // IIS / MonsterASP returns 411 for bodyless POSTs. Send an empty JSON object
+  // for actions that do not need a payload (start route, mark read, resend...).
+  if (cfg.data == null && ['post', 'put', 'patch'].includes((cfg.method ?? '').toLowerCase())) {
+    cfg.data = {}
+  }
   return cfg
 })
 
