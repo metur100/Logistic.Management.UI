@@ -14,10 +14,11 @@
 
 ## Build
 - Package: `ba.logistitrack.app`
-- Version name: `1.0.0`
-- Version code: `1`
-- Min SDK: 24 · Target SDK: 35
+- Version name: `1.0.1`
+- Version code: `2`
+- Min SDK: 24 · Target SDK: 36 (Android 16)
 - Signed AAB: `app/build/outputs/bundle/release/app-release.aab`
+- New icon: adaptive route-pin icon (API 26+) + legacy PNGs
 - Signed APK: `app/build/outputs/apk/release/app-release.apk`
 - Upload key: `../release.keystore` (kept out of git), alias `logistitrack`
 - Keystore password and key password: provided separately in the delivery message.
@@ -88,8 +89,15 @@ top-right corner of the login screen and in the app sidebar/top bar.
 - Declare account deletion URL.
 - Declare encrypted in transit.
 
+## Release notes 1.0.1
+- Target Android 16 (API 36)
+- New adaptive route-pin app icon
+- Version code 2 (replaces rejected version code 1)
+
 ## Release
 1. Create the app in Play Console with the package name.
+   - **Important:** use versionCode **2** / versionName **1.0.1**; versionCode 1 was
+     rejected for target API 35. This build targets API 36.
 2. Set **Croatian (hr)** as the default store listing language; add English (en)
    as an additional language.
 3. Upload the AAB to Internal testing first.

@@ -1,4 +1,4 @@
-﻿import { useEffect, useId, useState, type ReactNode } from 'react'
+import { useEffect, useId, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import {
   ArrowLeft, Check, Copy, Eye, EyeOff, Loader2, Search, X,
@@ -15,10 +15,17 @@ export function Logo({ compact = false }: { compact?: boolean }) {
   return (
     <div className="brand">
       <div className="brand-mark" aria-hidden="true">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-          <path d="M4 17.5 9.2 6.7a1 1 0 0 1 1.8 0l5.2 10.8" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M6.4 13.4h11.2" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" />
-          <circle cx="19.2" cy="6.2" r="2.3" fill="currentColor" />
+        <svg width="24" height="24" viewBox="0 0 108 108" fill="none">
+          <path
+            d="M30 78 H44 Q50 78 50 72 V60 Q50 54 56 54 H64 Q70 54 70 48 V38 Q70 32 76 32"
+            stroke="currentColor"
+            strokeWidth="7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <circle cx="30" cy="78" r="5" fill="currentColor" />
+          <circle cx="76" cy="32" r="7.5" fill="currentColor" />
+          <circle cx="76" cy="32" r="3.2" fill="#E8590C" />
         </svg>
       </div>
       {!compact && (

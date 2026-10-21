@@ -56,6 +56,11 @@ Privacy policy: https://logistic-management-ui.pages.dev/privacy
 ## Application ID
 ba.logistitrack.app
 
+## Release notes (version 1.0.1)
+- Target Android 16 (API 36)
+- New adaptive app icon
+- Version 2
+
 ## Release notes (version 1.0.0)
 First release:
 - Company workspaces with manager and driver roles

@@ -6,13 +6,15 @@ The web app is fully responsive and runs full-screen inside the WebView.
 ## Open / build
 
 1. Open this `android/` folder in Android Studio.
-2. Let Gradle sync (AGP 8.7.3, Kotlin 2.0.21, compile/target SDK 35, min SDK 24).
+2. Let Gradle sync (AGP 8.10.1, Kotlin 2.0.21, compile/target SDK 36, min SDK 24).
 3. Run on a device/emulator, or:
 
 ```bash
 ./gradlew assembleDebug
 ./gradlew bundleRelease
 ```
+
+Version: `1.0.1` (versionCode 2) · Target API 36
 
 Debug APK: `app/build/outputs/apk/debug/app-debug.apk`
 
