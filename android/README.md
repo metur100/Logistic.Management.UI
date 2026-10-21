@@ -52,6 +52,12 @@ keyPassword=...
 Then `./gradlew bundleRelease` produces a signed AAB in
 `app/build/outputs/bundle/release/`.
 
+A release keystore and `keystore.properties` already exist in this working copy
+but are ignored by git. Back them up; the delivery message contains the
+passwords.
+
+Verified output on the Android emulator (1080 × 1920): `store/webview-test.png`.
+
 ## Play Store
 
 `store/` contains the listing copy, icon, feature graphic and phone
