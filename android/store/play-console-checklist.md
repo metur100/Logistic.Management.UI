@@ -52,8 +52,11 @@ The app UI may appear in Bosnian or English; the language selector is in the
 top-right corner of the login screen and in the app sidebar/top bar.
 
 ## Graphics (in this folder)
-- App icon 512×512: `app-icon-512.png`
-- Feature graphic 1024×500: `feature-graphic-1024x500.png`
+- App icon 512×512: `app-icon-512.png` (global)
+- Feature graphic 1024×500:
+  - `feature-graphic-hr-1024x500.png` — Croatian tagline (use if hr is primary)
+  - `feature-graphic-1024x500.png` — English tagline
+  - Play Console accepts **one** global feature graphic; choose one.
 - Croatian listing screenshots 1080×1920 (8): `screenshots-bs/`
   1. Manager dashboard
   2. Transports
