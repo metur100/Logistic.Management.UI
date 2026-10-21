@@ -51,6 +51,11 @@ export default function AuthLayout({
           {lead && <p className="lead">{lead}</p>}
           {children}
           {footer}
+          <div className="auth-legal">
+            <a href="/privacy">Privacy</a>
+            <span>·</span>
+            <a href="/delete-account">Delete account</a>
+          </div>
         </div>
       </main>
     </div>

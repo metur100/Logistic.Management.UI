@@ -1112,6 +1112,9 @@ h3 { font-size: 15px; font-weight: 700; }
 .auth-note { font-size: 11px; color: var(--faint); line-height: 1.5; margin-top: 16px; }
 .auth-alt { text-align: center; margin-top: 20px; font-size: 12px; color: var(--muted); }
 .auth-alt a { color: var(--accent-dark); font-weight: 700; }
+.auth-legal { display: flex; justify-content: center; gap: 7px; margin-top: 30px; font-size: 10.5px; color: var(--faint); }
+.auth-legal a { color: var(--faint); font-weight: 600; }
+.auth-legal a:hover { color: var(--text); }
 .auth-help { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px dashed var(--line-strong); border-radius: 9px; color: var(--muted); font-size: 11px; margin-top: 18px; background: var(--surface-2); }
 .auth-help svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--accent); }
 
