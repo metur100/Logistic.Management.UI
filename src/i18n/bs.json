@@ -723,5 +723,10 @@
   "severity.low": "Nizak",
   "severity.medium": "Srednji",
   "severity.high": "Visok",
-  "trip.step_caption": "Korak {{current}} od {{total}} · {{status}}"
+  "trip.step_caption": "Korak {{current}} od {{total}} · {{status}}",
+  "auth.privacy": "Privatnost",
+  "auth.delete_account": "Brisanje računa",
+  "common.items_one": "stavka",
+  "common.items_few": "stavke",
+  "common.items_other": "stavki"
 }

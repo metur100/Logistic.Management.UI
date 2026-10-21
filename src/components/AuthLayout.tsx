@@ -55,9 +55,9 @@ export default function AuthLayout({
           {children}
           {footer}
           <div className="auth-legal">
-            <a href="/privacy">Privacy</a>
+            <a href="/privacy">{t('auth.privacy')}</a>
             <span>·</span>
-            <a href="/delete-account">Delete account</a>
+            <a href="/delete-account">{t('auth.delete_account')}</a>
           </div>
         </div>
       </main>

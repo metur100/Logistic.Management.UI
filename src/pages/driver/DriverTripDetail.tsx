@@ -142,7 +142,7 @@ export default function DriverTripDetail() {
         <div className="hero-meta">
           <span><Truck size={13} style={{ display: 'inline', verticalAlign: -2 }} /> <b>{trip.vehicle?.registrationNumber ?? '—'}</b></span>
           <span><RouteIcon size={13} style={{ display: 'inline', verticalAlign: -2 }} /> <b>{formatDistance(trip.distanceKm, i18n.language)}</b></span>
-          <span><Package size={13} style={{ display: 'inline', verticalAlign: -2 }} /> <b>{trip.cargoItems.length} {t('common.items')}</b> · {formatTons(totalWeight)}</span>
+          <span><Package size={13} style={{ display: 'inline', verticalAlign: -2 }} /> <b>{trip.cargoItems.length} {t('common.items', { count: trip.cargoItems.length })}</b> · {formatTons(totalWeight)}</span>
           <span><Clock size={13} style={{ display: 'inline', verticalAlign: -2 }} /> <b>{formatDateTime(trip.expectedArrivalDate, i18n.language)}</b></span>
         </div>
         <div className="hero-actions">
@@ -221,7 +221,7 @@ export default function DriverTripDetail() {
             {trip.remarks && <div className="alert info mt-2"><FileText size={15} /><span>{trip.remarks}</span></div>}
           </Card>
 
-          <Card title={t('trip.cargo_items')} subtitle={`${trip.cargoItems.length} ${t('common.items')} · ${formatTons(totalWeight)}`}>
+          <Card title={t('trip.cargo_items')} subtitle={`${trip.cargoItems.length} ${t('common.items', { count: trip.cargoItems.length })} · ${formatTons(totalWeight)}`}>
             {trip.cargoItems.length === 0 ? <EmptyState icon={Package} title={t('trip.no_cargo')} /> : (
               <div>
                 {trip.cargoItems.map(item => (

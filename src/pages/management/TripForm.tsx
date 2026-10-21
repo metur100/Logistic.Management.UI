@@ -294,7 +294,7 @@ export default function TripForm() {
                 </div>
               )}
               <div className="row between mt-2 small">
-                <span className="muted">{selected.length} {t('common.items')} {t('common.selected')}</span>
+                <span className="muted">{selected.length} {t('common.items', { count: selected.length })} {t('common.selected')}</span>
                 <span className={overCapacity ? 'badge badge-red' : 'strong'}>{formatTons(totalWeight)}</span>
               </div>
               {overCapacity && <div className="alert warn mt-2">{t('trip.over_capacity', { value: formatNumber(vehicle?.capacity, 0) })}</div>}

@@ -39,7 +39,7 @@ export function TripRow({ trip, href, driverView = false }: { trip: Trip; href: 
         <div className="route-sub">
           {!driverView && trip.driver && <span><User /> {trip.driver.fullName}</span>}
           {trip.vehicle && <span><Truck /> {trip.vehicle.registrationNumber}</span>}
-          {trip.cargoItems?.length > 0 && <span><Package /> {trip.cargoItems.length} {t('common.items')}</span>}
+          {trip.cargoItems?.length > 0 && <span><Package /> {trip.cargoItems.length} {t('common.items', { count: trip.cargoItems.length })}</span>}
           {trip.distanceKm ? <span><Route /> {distance}</span> : null}
         </div>
       </div>

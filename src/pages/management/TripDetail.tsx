@@ -97,7 +97,7 @@ export default function TripDetail() {
               <span><User size={13} style={{ display: 'inline', verticalAlign: -2 }} /> <b>{trip.driver?.fullName ?? t('common.unassigned')}</b></span>
               <span><Truck size={13} style={{ display: 'inline', verticalAlign: -2 }} /> <b>{trip.vehicle?.registrationNumber ?? '—'}</b></span>
               <span><RouteIcon size={13} style={{ display: 'inline', verticalAlign: -2 }} /> <b>{formatDistance(trip.distanceKm, i18n.language)}</b></span>
-              <span><Package size={13} style={{ display: 'inline', verticalAlign: -2 }} /> <b>{trip.cargoItems.length} {t('common.items')}</b> · {formatTons(totalWeight)}</span>
+              <span><Package size={13} style={{ display: 'inline', verticalAlign: -2 }} /> <b>{trip.cargoItems.length} {t('common.items', { count: trip.cargoItems.length })}</b> · {formatTons(totalWeight)}</span>
             </div>
           </div>
           <div><StatusBadge status={trip.status} /></div>
@@ -143,7 +143,7 @@ export default function TripDetail() {
             </div>
           </Card>
 
-          <Card title={t('trip.cargo_items')} subtitle={`${trip.cargoItems.length} ${t('common.items')} · ${formatTons(totalWeight)}`}>
+          <Card title={t('trip.cargo_items')} subtitle={`${trip.cargoItems.length} ${t('common.items', { count: trip.cargoItems.length })} · ${formatTons(totalWeight)}`}>
             {trip.cargoItems.length === 0 ? (
               <EmptyState icon={Package} title={t('trip.no_cargo')} />
             ) : (

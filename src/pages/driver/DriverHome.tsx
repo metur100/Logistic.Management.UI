@@ -98,7 +98,7 @@ export default function DriverHome() {
           <div className="meta">
             <span><Badge tone="orange">{t(`status.${active.status}`, active.status)}</Badge></span>
             <span><Clock size={12} style={{ display: 'inline', verticalAlign: -2 }} /> {formatDateTime(active.expectedArrivalDate, i18n.language)}</span>
-            <span><Package size={12} style={{ display: 'inline', verticalAlign: -2 }} /> {active.cargoCount} {t('common.items')} · {formatTons(active.totalWeightTons)}</span>
+            <span><Package size={12} style={{ display: 'inline', verticalAlign: -2 }} /> {active.cargoCount} {t('common.items', { count: active.cargoCount })} · {formatTons(active.totalWeightTons)}</span>
           </div>
           <div className="actions">
             <button className="btn btn-accent" onClick={start} disabled={starting}>

@@ -723,5 +723,10 @@
   "severity.low": "Low",
   "severity.medium": "Medium",
   "severity.high": "High",
-  "trip.step_caption": "Step {{current}} of {{total}} · {{status}}"
+  "trip.step_caption": "Step {{current}} of {{total}} · {{status}}",
+  "auth.privacy": "Privacy",
+  "auth.delete_account": "Delete account",
+  "common.items_one": "item",
+  "common.items_few": "items",
+  "common.items_other": "items"
 }

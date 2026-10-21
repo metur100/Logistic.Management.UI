@@ -1,5 +1,5 @@
 const localeMap: Record<string, string> = {
-  bs: 'bs-BA',
+  bs: 'sr-Latn-BA',
   en: 'en-GB',
 }
 

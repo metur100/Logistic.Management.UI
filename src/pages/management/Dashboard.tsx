@@ -83,7 +83,7 @@ export default function Dashboard() {
                       <div className="route-sub">
                         {trip.driverName && <span>{trip.driverName}</span>}
                         {trip.vehicleReg && <span>{trip.vehicleReg}</span>}
-                        <span>{trip.cargoCount} {t('common.items')} · {formatTons(trip.weightTons)}</span>
+                        <span>{trip.cargoCount} {t('common.items', { count: trip.cargoCount })} · {formatTons(trip.weightTons)}</span>
                       </div>
                     </div>
                     <div className="ops-status">
