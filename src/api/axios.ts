@@ -1,5 +1,6 @@
 import axios from 'axios'
 import type { AxiosError } from 'axios'
+import i18n from '../i18n'
 
 const baseURL =
   import.meta.env.VITE_API_BASE_URL ||
@@ -33,15 +34,15 @@ api.interceptors.response.use(
   },
 )
 
-export function apiError(err: unknown, fallback = 'Something went wrong.'): string {
+export function apiError(err: unknown, fallback = i18n.t('common.error')): string {
   if (axios.isAxiosError(err)) {
     const data = err.response?.data as { message?: string; title?: string; error?: string } | undefined
     if (data?.message) return data.message
     if (data?.title) return data.title
     if (data?.error) return data.error
-    if (err.response?.status === 403) return 'You do not have permission to do that.'
-    if (err.response?.status === 404) return 'Not found.'
-    if (err.code === 'ERR_NETWORK') return 'Cannot reach the server. Check your connection.'
+    if (err.response?.status === 403) return i18n.t('common.forbidden')
+    if (err.response?.status === 404) return i18n.t('common.not_found')
+    if (err.code === 'ERR_NETWORK') return i18n.t('common.network_error')
   }
   if (err instanceof Error && err.message) return err.message
   return fallback

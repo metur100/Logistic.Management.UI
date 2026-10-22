@@ -757,5 +757,9 @@
   "trip.documents": "Dokumenti",
   "trip.documents_sub": "CMR i dokaz o isporuci.",
   "incidents.location_placeholder": "Autoput A1, km 145",
-  "common.transport_operations": "Transportne operacije"
+  "common.transport_operations": "Transportne operacije",
+  "common.error": "Došlo je do greške.",
+  "common.forbidden": "Nemate dozvolu za ovu radnju.",
+  "common.not_found": "Nije pronađeno.",
+  "common.network_error": "Ne mogu se povezati sa serverom. Provjerite vezu."
 }

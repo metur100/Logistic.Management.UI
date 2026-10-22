@@ -1,4 +1,4 @@
-﻿import i18n from 'i18next'
+import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import en from './en.json'
 import bs from './bs.json'
@@ -95,6 +95,11 @@ i18n
     returnNull: false,
     parseMissingKeyHandler: humanize,
   })
+
+document.documentElement.lang = i18n.language
+i18n.on('languageChanged', language => {
+  document.documentElement.lang = language
+})
 
 export default i18n
 
