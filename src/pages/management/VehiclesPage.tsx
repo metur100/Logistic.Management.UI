@@ -143,7 +143,7 @@ export default function VehiclesPage() {
                 </div>
                 <div className="grow">
                   <div className="name">{v.registrationNumber}</div>
-                  <div className="loc">{v.type ?? t('common.vehicle')}{v.fleetName ? ` · ${v.fleetName}` : ''}</div>
+                  <div className="loc">{v.type ? t(`vehicle_type.${v.type.toLowerCase().replace(' ', '_')}`, v.type) : t('common.vehicle')}{v.fleetName ? ` · ${v.fleetName}` : ''}</div>
                 </div>
                 <Badge tone={v.isActive ? 'green' : 'slate'} dot>{v.isActive ? t('common.active') : t('common.inactive')}</Badge>
               </div>
@@ -152,7 +152,7 @@ export default function VehiclesPage() {
                 <div className="metric"><div className="v">{v.capacity ? formatNumber(v.capacity, 0) : '—'}</div><div className="k">{t('fleet.capacity_tons')}</div></div>
                 <div className="metric"><div className="v">{v.activeTrips ?? 0}</div><div className="k">{t('fleet.active_trips')}</div></div>
                 <div className="metric"><div className="v">{v.totalTrips ?? 0}</div><div className="k">{t('fleet.total_trips')}</div></div>
-                <div className="metric"><div className="v" style={{ fontSize: 12 }}>{v.ownershipType ?? '—'}</div><div className="k">{t('fleet.ownership')}</div></div>
+                <div className="metric"><div className="v" style={{ fontSize: 12 }}>{v.ownershipType ? t(`ownership.${v.ownershipType.toLowerCase()}`, v.ownershipType) : '—'}</div><div className="k">{t('fleet.ownership')}</div></div>
               </div>
 
               {(v.ownerName || v.ownerPhone) && (

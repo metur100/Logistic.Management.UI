@@ -90,7 +90,7 @@ export default function CompaniesPage() {
           <option value="Active">{t('admin.active')}</option>
           <option value="Suspended">{t('admin.suspended')}</option>
         </select>
-        <span className="small faint" style={{ marginLeft: 'auto' }}>{filtered.length} {filtered.length === 1 ? 'result' : t('admin.results')}</span>
+        <span className="small faint" style={{ marginLeft: 'auto' }}>{filtered.length} {filtered.length === 1 ? t('common.result') : t('admin.results')}</span>
       </div>
 
       {error && <div className="alert error mb-3">{error}</div>}

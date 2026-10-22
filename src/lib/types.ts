@@ -115,6 +115,10 @@ export interface Trip {
   podNumber?: string | null
   podReceived: boolean
   cmrNumber?: string | null
+  cmrImageUrl?: string | null
+  cmrImageThumbUrl?: string | null
+  deliveryNoteImageUrl?: string | null
+  deliveryNoteImageThumbUrl?: string | null
   createdAt: string
   updatedAt: string
   cargoItems: TripCargo[]

@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
@@ -58,15 +58,15 @@ export default function CompanyDetailPage() {
 
   const driverColumns: Column<CompanyDetail['drivers'][number]>[] = [
     { key: 'name', header: t('admin.driver'), label: t('admin.driver'), cell: d => <div><div className="cell-main">{d.fullName}</div><div className="cell-sub">@{d.username} · {d.email ?? '—'}</div></div> },
-    { key: 'status', header: t('admin.status'), label: t('admin.status'), cell: d => <Badge tone={d.status === 'Active' ? 'green' : d.status === 'Invited' ? 'amber' : 'red'}>{d.status}</Badge> },
+    { key: 'status', header: t('admin.status'), label: t('admin.status'), cell: d => <Badge tone={d.status === 'Active' ? 'green' : d.status === 'Invited' ? 'amber' : 'red'}>{t(`drivers.status_${d.status.toLowerCase()}`, d.status)}</Badge> },
     { key: 'trips', header: t('admin.trips_short'), label: t('admin.trips_short'), cell: d => <span className="mono">{d.trips}</span> },
     { key: 'login', header: t('admin.last_login'), label: t('admin.last_login'), hideOnMobile: true, cell: d => <span className="small muted">{formatDate(d.lastLoginAt, i18n.language)}</span> },
   ]
 
   const vehicleColumns: Column<CompanyDetail['vehicles'][number]>[] = [
-    { key: 'reg', header: t('fleet.registration'), label: t('fleet.registration'), cell: v => <div><div className="cell-main">{v.registrationNumber}</div><div className="cell-sub">{v.type ?? '—'}</div></div> },
+    { key: 'reg', header: t('fleet.registration'), label: t('fleet.registration'), cell: v => <div><div className="cell-main">{v.registrationNumber}</div><div className="cell-sub">{v.type ? t(`vehicle_type.${v.type.toLowerCase().replace(' ', '_')}`, v.type) : '—'}</div></div> },
     { key: 'capacity', header: t('fleet.capacity'), label: t('fleet.capacity'), cell: v => <span className="mono">{v.capacity ? `${formatNumber(v.capacity, 0)} t` : '—'}</span> },
-    { key: 'owner', header: t('fleet.ownership'), label: t('fleet.ownership'), hideOnMobile: true, cell: v => <span className="small">{v.ownershipType ?? '—'}</span> },
+    { key: 'owner', header: t('fleet.ownership'), label: t('fleet.ownership'), hideOnMobile: true, cell: v => <span className="small">{v.ownershipType ? t(`ownership.${v.ownershipType.toLowerCase()}`, v.ownershipType) : '—'}</span> },
     { key: 'status', header: t('admin.status'), label: t('admin.status'), cell: v => <Badge tone={v.isActive ? 'green' : 'slate'}>{v.isActive ? t('common.active') : t('common.inactive')}</Badge> },
   ]
 
@@ -80,7 +80,7 @@ export default function CompanyDetailPage() {
 
   const cargoColumns: Column<CompanyDetail['cargo'][number]>[] = [
     { key: 'desc', header: t('cargo.description'), label: t('cargo.description'), cell: c => <div><div className="cell-main">{c.description}</div><div className="cell-sub">{c.consignor ?? '—'} → {c.consignee ?? '—'}</div></div> },
-    { key: 'type', header: t('cargo.type'), label: t('cargo.type'), hideOnMobile: true, cell: c => <Badge tone="slate">{c.cargoType ?? 'General'}</Badge> },
+    { key: 'type', header: t('cargo.type'), label: t('cargo.type'), hideOnMobile: true, cell: c => <Badge tone="slate">{c.cargoType ? t(`cargo_type.${c.cargoType.toLowerCase()}`, c.cargoType) : '—'}</Badge> },
     { key: 'weight', header: t('cargo.weight'), label: t('cargo.weight'), cell: c => <span className="mono">{formatTons(c.weightTons)}</span> },
     { key: 'trip', header: t('cargo.assignment'), label: t('cargo.assignment'), cell: c => c.tripId ? <Badge tone="blue">{c.tripNumber}</Badge> : <Badge tone="amber">{t('cargo.unassigned')}</Badge> },
   ]
@@ -117,7 +117,7 @@ export default function CompanyDetailPage() {
           </div>
         </div>
         <div className="row wrap" style={{ gap: 6 }}>
-          <Badge tone={company.status === 'Active' ? 'green' : 'red'} dot>{company.status}</Badge>
+          <Badge tone={company.status === 'Active' ? 'green' : 'red'} dot>{company.status === 'Active' ? t('admin.active') : t('admin.suspended')}</Badge>
           {company.isVerified && <Badge tone="blue"><ShieldCheck size={10} /> {t('admin.verified')}</Badge>}
         </div>
       </div>
@@ -185,11 +185,11 @@ export default function CompanyDetailPage() {
                 {data.incidents.map(inc => (
                   <div className="list-row" key={inc.id}>
                     <div className="grow">
-                      <div className="t">{inc.type} {inc.tripNumber ? `· ${inc.tripNumber}` : ''}</div>
+                      <div className="t">{t(`incident_type.${inc.type.replace(/ /g, '_').toLowerCase()}`, inc.type)} {inc.tripNumber ? `· ${inc.tripNumber}` : ''}</div>
                       <div className="s">{inc.description}</div>
                       <div className="tiny faint mt-1">{formatDateTime(inc.reportedAt, i18n.language)} · {inc.reporterName ?? '—'}</div>
                     </div>
-                    <Badge tone={inc.status === 'Open' ? 'red' : 'green'}>{inc.status}</Badge>
+                    <Badge tone={inc.status === 'Open' ? 'red' : 'green'}>{t(`incidents.status_${inc.status.toLowerCase()}`, inc.status)}</Badge>
                   </div>
                 ))}
               </div>

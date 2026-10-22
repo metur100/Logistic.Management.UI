@@ -13,6 +13,7 @@ import { TRIP_FLOW, tripProgress } from '../../lib/status'
 import {
   Card, ConfirmDialog, EmptyState, PageHeader, PageLoader, StatusBadge,
 } from '../../components/ui'
+import DocumentUpload from '../../components/DocumentUpload'
 
 export default function TripDetail() {
   const { id } = useParams()
@@ -153,7 +154,7 @@ export default function TripDetail() {
                     <div className="icon"><Package /></div>
                     <div className="grow">
                       <div className="t">{item.description}</div>
-                      <div className="s">{item.consignor ?? '—'} → {item.consignee ?? '—'} {item.cargoType ? `· ${item.cargoType}` : ''}</div>
+                      <div className="s">{item.consignor ?? '—'} → {item.consignee ?? '—'} {item.cargoType ? `· ${t(`cargo_type.${item.cargoType.toLowerCase()}`, item.cargoType)}` : ''}</div>
                       {item.specialInstructions && <div className="s" style={{ color: 'var(--amber)' }}>{item.specialInstructions}</div>}
                     </div>
                     <div className="w">{formatTons(item.weightTons)}</div>
@@ -161,6 +162,25 @@ export default function TripDetail() {
                 ))}
               </div>
             )}
+          </Card>
+
+          <Card title={t('trip.documents')} subtitle={t('trip.documents_sub')}>
+            <DocumentUpload
+              tripId={trip.id}
+              type="cmr"
+              title={t('trip.cmr_image')}
+              url={trip.cmrImageUrl}
+              thumbUrl={trip.cmrImageThumbUrl}
+              onChanged={load}
+            />
+            <DocumentUpload
+              tripId={trip.id}
+              type="delivery-note"
+              title={t('trip.delivery_note_image')}
+              url={trip.deliveryNoteImageUrl}
+              thumbUrl={trip.deliveryNoteImageThumbUrl}
+              onChanged={load}
+            />
           </Card>
 
           {trip.remarks && (
@@ -185,7 +205,7 @@ export default function TripDetail() {
                 <div className="icon" style={{ width: 36, height: 36, borderRadius: 9, background: 'var(--surface-2)', display: 'grid', placeItems: 'center' }}><Truck size={16} className="muted" /></div>
                 <div className="grow">
                   <div className="t">{trip.vehicle?.registrationNumber ?? t('trip.no_vehicle')}</div>
-                  <div className="s">{trip.vehicle?.type ?? '—'} {trip.vehicle?.capacity ? `· ${formatNumber(trip.vehicle.capacity, 0)} t` : ''}</div>
+                  <div className="s">{trip.vehicle?.type ? t(`vehicle_type.${trip.vehicle.type.toLowerCase().replace(' ', '_')}`, trip.vehicle.type) : '—'} {trip.vehicle?.capacity ? `· ${formatNumber(trip.vehicle.capacity, 0)} t` : ''}</div>
                 </div>
               </div>
             </div>

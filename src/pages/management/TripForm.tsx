@@ -241,7 +241,7 @@ export default function TripForm() {
                 <Field label={t('trip.vehicle')}>
                   <select className="select" value={form.vehicleId} onChange={set('vehicleId')}>
                     <option value="">{t('trip.no_vehicle')}</option>
-                    {activeVehicles.map(v => <option key={v.id} value={v.id}>{v.registrationNumber} · {v.type ?? t('common.vehicle')}{v.capacity ? ` · ${formatNumber(v.capacity, 0)} t` : ''}</option>)}
+                    {activeVehicles.map(v => <option key={v.id} value={v.id}>{v.registrationNumber} · {v.type ? t(`vehicle_type.${v.type.toLowerCase().replace(' ', '_')}`, v.type) : t('common.vehicle')}{v.capacity ? ` · ${formatNumber(v.capacity, 0)} t` : ''}</option>)}
                   </select>
                   {vehicle?.capacity ? <span className="hint">{t('trip.capacity', { value: formatNumber(vehicle.capacity, 0) })}</span> : null}
                 </Field>
@@ -285,7 +285,7 @@ export default function TripForm() {
                         </span>
                         <span className="grow">
                           <span className="strong" style={{ fontSize: 12.5, display: 'block' }}>{item.description}</span>
-                          <span className="tiny muted">{item.consignor ? `${item.consignor} → ` : ''}{item.consignee ?? '—'} · {item.cargoType ?? 'General'}</span>
+                          <span className="tiny muted">{item.consignor ? `${item.consignor} → ` : ''}{item.consignee ?? '—'} · {item.cargoType ? t(`cargo_type.${item.cargoType.toLowerCase()}`, item.cargoType) : t('cargo_type.general')}</span>
                         </span>
                         <span className="mono small nowrap">{formatTons(item.weightTons)}</span>
                       </button>

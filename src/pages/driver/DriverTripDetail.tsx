@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
@@ -18,6 +18,7 @@ import {
   Badge, Card, EmptyState, Field, Modal, PageHeader, PageLoader,
   StatusBadge,
 } from '../../components/ui'
+import DocumentUpload from '../../components/DocumentUpload'
 
 export default function DriverTripDetail() {
   const { id } = useParams()
@@ -240,7 +241,23 @@ export default function DriverTripDetail() {
           </Card>
 
           <Card title={t('driver.documents')} subtitle={t('driver.documents_sub')}>
-            <div className="form-grid">
+            <DocumentUpload
+              tripId={trip.id}
+              type="cmr"
+              title={t('trip.cmr_image')}
+              url={trip.cmrImageUrl}
+              thumbUrl={trip.cmrImageThumbUrl}
+              onChanged={load}
+            />
+            <DocumentUpload
+              tripId={trip.id}
+              type="delivery-note"
+              title={t('trip.delivery_note_image')}
+              url={trip.deliveryNoteImageUrl}
+              thumbUrl={trip.deliveryNoteImageThumbUrl}
+              onChanged={load}
+            />
+            <div className="form-grid mt-3">
               <Field label={t('driver.cmr')}>
                 <div className="row" style={{ gap: 6 }}>
                   <input className="input" value={cmr} onChange={e => setCmr(e.target.value)} placeholder="CMR-2026-00412" />
@@ -283,7 +300,7 @@ export default function DriverTripDetail() {
                 <User size={15} className="faint" />
               </div>
               <div className="list-row">
-                <div className="grow"><div className="t">{t('driver.vehicle')}</div><div className="s">{trip.vehicle?.registrationNumber ?? '—'} · {trip.vehicle?.type ?? ''}</div></div>
+                <div className="grow"><div className="t">{t('driver.vehicle')}</div><div className="s">{trip.vehicle?.registrationNumber ?? '—'} · {trip.vehicle?.type ? t(`vehicle_type.${trip.vehicle.type.toLowerCase().replace(' ', '_')}`, trip.vehicle.type) : ''}</div></div>
                 <Truck size={15} className="faint" />
               </div>
               <div className="list-row">

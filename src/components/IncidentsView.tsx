@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
@@ -205,7 +205,7 @@ export default function IncidentsView({ role }: { role: 'manager' | 'driver' }) 
               </select>
             </Field>
             <Field label={t('incidents.location')} className="span-2">
-              <input className="input" value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} placeholder="A1 highway, km 145" />
+              <input className="input" value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} placeholder={t('incidents.location_placeholder')} />
             </Field>
             <Field label={t('incidents.description')} required className="span-2">
               <textarea className="textarea" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder={t('incidents.description_placeholder')} required />
@@ -218,7 +218,7 @@ export default function IncidentsView({ role }: { role: 'manager' | 'driver' }) 
         open={resolveTarget !== null}
         onClose={() => setResolveTarget(null)}
         title={t('incidents.resolve_title')}
-        description={resolveTarget ? `${resolveTarget.type} · ${resolveTarget.tripNumber ?? ''}` : undefined}
+        description={resolveTarget ? `${t(`incident_type.${resolveTarget.type.replace(/ /g, '_').toLowerCase()}`, resolveTarget.type)} · ${resolveTarget.tripNumber ?? ''}` : undefined}
         size="small"
         footer={
           <>

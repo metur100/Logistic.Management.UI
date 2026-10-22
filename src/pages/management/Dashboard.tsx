@@ -162,7 +162,7 @@ export default function Dashboard() {
                   </div>
                   <div className="grow">
                     <div className="t">{v.registrationNumber}</div>
-                    <div className="s">{v.type ?? t('common.vehicle')} · {v.capacity ? `${formatNumber(v.capacity, 0)} t` : '—'}</div>
+                    <div className="s">{(v.type ? t(`vehicle_type.${v.type.toLowerCase().replace(' ', '_')}`, v.type) : t('common.vehicle'))} · {v.capacity ? `${formatNumber(v.capacity, 0)} t` : '—'}</div>
                   </div>
                   <Badge tone={v.onTrip ? 'amber' : 'green'} dot>{v.onTrip ? t('dashboard.on_trip') : t('dashboard.available')}</Badge>
                 </div>

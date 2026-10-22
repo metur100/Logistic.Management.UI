@@ -1,4 +1,4 @@
-import i18n from 'i18next'
+﻿import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import en from './en.json'
 import bs from './bs.json'
@@ -6,7 +6,7 @@ import bs from './bs.json'
 /**
  * English is the source language, Bosnian is the second UI language.
  * Keys missing from a language fall back to a readable label derived from the
- * key (e.g. `dashboard.live_operations` → "Live operations"), never a raw key.
+ * key (e.g. `dashboard.live_operations` â†’ "Live operations"), never a raw key.
  */
 const NAMESPACE_LABEL: Record<string, string> = {
   dashboard: 'Dashboard',
@@ -51,7 +51,7 @@ const NAMESPACE_DESCRIPTION: Record<string, string> = {
 
 const TERMS: Record<string, string> = {
   smtp: 'SMTP', pod: 'POD', cmr: 'CMR', eta: 'ETA', api: 'API', id: 'ID',
-  km: 'km', cbm: 'm³', url: 'URL', ssl: 'SSL', gps: 'GPS',
+  km: 'km', cbm: 'mÂ³', url: 'URL', ssl: 'SSL', gps: 'GPS',
 }
 
 const SUFFIXES = ['_placeholder', '_eyebrow', '_subtitle', '_sub', '_text', '_hint', '_note', '_title', '_done']
@@ -87,7 +87,7 @@ i18n
   .use(initReactI18next)
   .init({
     resources: { en: { translation: en }, bs: { translation: bs } },
-    lng: localStorage.getItem('lang') || 'en',
+    lng: localStorage.getItem('lang') || 'bs',
     fallbackLng: 'en',
     keySeparator: false,
     nsSeparator: false,
@@ -97,3 +97,4 @@ i18n
   })
 
 export default i18n
+

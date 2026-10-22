@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import {
@@ -115,7 +115,7 @@ export default function AdminUsersPage() {
     },
     {
       key: 'company', header: t('admin.company'), label: t('admin.company'), hideOnMobile: true,
-      cell: u => u.companyName ? <div><div className="small">{u.companyName}</div>{u.companyStatus && u.companyStatus !== 'Active' && <Badge tone="red">{u.companyStatus}</Badge>}</div> : <span className="muted">—</span>,
+      cell: u => u.companyName ? <div><div className="small">{u.companyName}</div>{u.companyStatus && u.companyStatus !== 'Active' && <Badge tone="red">{t('admin.suspended')}</Badge>}</div> : <span className="muted">—</span>,
     },
     {
       key: 'role', header: t('admin.role'), label: t('admin.role'),

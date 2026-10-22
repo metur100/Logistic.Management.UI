@@ -131,7 +131,7 @@ export default function CargoPage() {
       cell: c => (
         <div>
           <div className="cell-main">{c.description}</div>
-          <div className="cell-sub">{c.cargoType ?? 'General'} · {formatDate(c.createdAt, i18n.language)}</div>
+          <div className="cell-sub">{c.cargoType ? t(`cargo_type.${c.cargoType.toLowerCase()}`, c.cargoType) : t('cargo_type.general')} · {formatDate(c.createdAt, i18n.language)}</div>
         </div>
       ),
     },

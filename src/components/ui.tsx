@@ -1,7 +1,7 @@
-import { useEffect, useId, useState, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  ArrowLeft, Check, Copy, Eye, EyeOff, Loader2, Search, X,
+  ArrowLeft, Check, ChevronDown, Copy, Eye, EyeOff, Loader2, Search, X,
   type LucideIcon,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -408,22 +408,75 @@ export function CopyButton({
 
 /* ── Language select ───────────────────────────────────────── */
 
+const LANGUAGES = [
+  { code: 'bs', short: 'BS', label: 'Bosanski' },
+  { code: 'en', short: 'EN', label: 'English' },
+]
+
 export function LanguageSelect({ dark = false }: { dark?: boolean }) {
-  const { i18n } = useTranslation()
+  const { i18n, t } = useTranslation()
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const current = i18n.language.startsWith('en') ? 'en' : 'bs'
+
+  useEffect(() => {
+    if (!open) return
+    const onPointerDown = (event: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(event.target as Node)) setOpen(false)
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [open])
+
+  const choose = (code: string) => {
+    i18n.changeLanguage(code)
+    localStorage.setItem('lang', code)
+    document.documentElement.lang = code
+    setOpen(false)
+  }
+
   return (
-    <select
-      className={dark ? 'select-mini' : 'select'}
-      style={dark ? undefined : { height: 34, width: 100, fontSize: 11.5 }}
-      value={i18n.language.startsWith('bs') ? 'bs' : 'en'}
-      onChange={e => {
-        i18n.changeLanguage(e.target.value)
-        localStorage.setItem('lang', e.target.value)
-      }}
-      aria-label="Language"
-    >
-      <option value="bs">BS</option>
-      <option value="en">EN</option>
-    </select>
+    <div className={`lang-select ${dark ? 'lang-dark' : 'lang-light'}`} ref={rootRef}>
+      <button
+        type="button"
+        className="lang-trigger"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={t('common.language')}
+        onClick={() => setOpen(value => !value)}
+      >
+        <span className="lang-code">{current.toUpperCase()}</span>
+        <ChevronDown size={13} />
+      </button>
+      {open && (
+        <div className="lang-menu" role="listbox" aria-label={t('common.language')}>
+          {LANGUAGES.map(language => {
+            const active = current === language.code
+            return (
+              <button
+                key={language.code}
+                type="button"
+                role="option"
+                aria-selected={active}
+                className={`lang-option ${active ? 'is-active' : ''}`}
+                onClick={() => choose(language.code)}
+              >
+                <span className="lang-name">{language.label}</span>
+                <span className="lang-code">{language.short}</span>
+                {active && <Check size={13} />}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
   )
 }
 
