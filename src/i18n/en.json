@@ -756,5 +756,6 @@
   "common.open": "Open",
   "trip.documents": "Documents",
   "trip.documents_sub": "CMR and proof of delivery.",
-  "incidents.location_placeholder": "A1 highway, km 145"
+  "incidents.location_placeholder": "A1 highway, km 145",
+  "common.transport_operations": "Transport operations"
 }

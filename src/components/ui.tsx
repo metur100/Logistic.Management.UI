@@ -12,6 +12,7 @@ import { avatarTone, initials } from '../lib/format'
 /* ── Brand ─────────────────────────────────────────────────── */
 
 export function Logo({ compact = false }: { compact?: boolean }) {
+  const { t } = useTranslation()
   return (
     <div className="brand">
       <div className="brand-mark" aria-hidden="true">
@@ -31,7 +32,7 @@ export function Logo({ compact = false }: { compact?: boolean }) {
       {!compact && (
         <div>
           <div className="brand-name">Logisti<span>Track</span></div>
-          <div className="brand-sub">Transport operations</div>
+          <div className="brand-sub">{t('common.transport_operations')}</div>
         </div>
       )}
     </div>

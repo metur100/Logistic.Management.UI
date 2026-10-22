@@ -107,7 +107,7 @@ export default function Shell({ variant }: { variant: 'management' | 'admin' | '
           <div className="workspace-chip">
             {variant === 'admin' ? (
               <>
-                <div className="eyebrow">Platform</div>
+                <div className="eyebrow">{t('nav.platform')}</div>
                 <span className="admin-mark"><ShieldCheck size={12} /> {t('role.admin')}</span>
               </>
             ) : (

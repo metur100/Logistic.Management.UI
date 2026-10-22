@@ -756,5 +756,6 @@
   "common.open": "Otvori",
   "trip.documents": "Dokumenti",
   "trip.documents_sub": "CMR i dokaz o isporuci.",
-  "incidents.location_placeholder": "Autoput A1, km 145"
+  "incidents.location_placeholder": "Autoput A1, km 145",
+  "common.transport_operations": "Transportne operacije"
 }
